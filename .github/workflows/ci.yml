@@ -10,6 +10,8 @@ permissions:
 jobs:
   test:
     runs-on: ubuntu-latest
+    # A stuck step fails in minutes instead of holding the runner for hours.
+    timeout-minutes: 20
     steps:
       # Every action pinned to a commit: a tag can be moved.
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -22,7 +24,10 @@ jobs:
       - run: pnpm lint
       - run: pnpm test
       - run: pnpm build
-      - run: pnpm exec playwright install --with-deps firefox
+      # Browser only, from Playwright's CDN. `--with-deps` goes through apt, whose mirrors can crawl
+      # (12 minutes for half the packages on 2026-10-27); the runner image already has Firefox's libraries.
+      - run: pnpm exec playwright install firefox
+        timeout-minutes: 5
       - run: pnpm e2e
       - if: failure()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
@@ -46,6 +51,7 @@ jobs:
     concurrency:
       group: pages
       cancel-in-progress: false
+    timeout-minutes: 10
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
