@@ -29,6 +29,8 @@ export const MixSettingsSchema = v.object({
   fadeIn: v.optional(FadeSchema, { duration: 0, curve: 'tri' }),
   fadeOut: v.optional(FadeSchema, { duration: 0, curve: 'tri' }),
   matchLoudness: v.optional(v.boolean(), false),
+  /** Integrated loudness every clip is brought to when `matchLoudness` is on. */
+  matchLufs: v.optional(v.pipe(v.number(), v.minValue(-40), v.maxValue(-5)), -14),
   format: v.optional(v.picklist(['wav', 'mp3']), 'wav'),
   sampleRate: v.optional(v.picklist([44100, 48000]), 44100),
 });

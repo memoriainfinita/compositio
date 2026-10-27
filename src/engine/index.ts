@@ -4,8 +4,9 @@
 
 import type { Silences } from '../model/edits.ts';
 import type { MediaInfo } from '../model/media.ts';
-import { detectSilences, listenCopy, measureFile, probeFile, processFile, type ListenFormat, type Processed } from './jobs.ts';
+import { detectSilences, listenCopy, measureFile, mixFiles, previewTransition, probeFile, processFile, type ListenFormat, type MixInput, type Processed } from './jobs.ts';
 import type { Measurement, PlanInput } from '../model/operations.ts';
+import type { Transition } from '../model/timeline.ts';
 import { computePeaks, type Peaks } from './peaks.ts';
 import { createQueue, type Queue } from './queue.ts';
 import type { Runner } from './runner.ts';
@@ -31,6 +32,9 @@ export interface Engine {
   /** A copy the browser can play, for files it cannot. */
   listen(file: File, info: MediaInfo, track: number, format: ListenFormat): Promise<Blob>;
   process(label: string, file: File, input: Omit<PlanInput, 'inputPath' | 'outputPath'>): { id: string; result: Promise<Processed> };
+  mix(label: string, input: MixInput): { id: string; result: Promise<Processed> };
+  /** One transition with some context; the caller cancels it by id when a newer one is asked for. */
+  preview(input: MixInput & { transition: Transition }): { id: string; result: Promise<{ blob: Blob; crossAt: number }> };
   dispose(): void;
 }
 
@@ -51,6 +55,8 @@ export function createEngine(
     measure: (file, input) => queue.add(file.name, (o) => measureFile(runner, file, input, o), 'view').result,
     listen: (file, info, track, format) => queue.add(file.name, (o) => listenCopy(runner, file, info, track, format, o), 'view').result,
     process: (label, file, input) => queue.add(label, (o) => processFile(runner, file, input, o)),
+    mix: (label, input) => queue.add(label, (o) => mixFiles(runner, input, o)),
+    preview: (input) => queue.add(input.files[1]?.name ?? '', (o) => previewTransition(runner, input, o), 'view'),
     dispose() {
       wakeLock.dispose();
       runner.dispose();
@@ -59,6 +65,6 @@ export function createEngine(
 }
 
 export { EngineError, type EngineErrorCode } from './runner.ts';
-export type { ListenFormat, Processed } from './jobs.ts';
+export type { ListenFormat, MixInput, Processed } from './jobs.ts';
 export type { Peaks } from './peaks.ts';
 export type { JobView } from './queue.ts';

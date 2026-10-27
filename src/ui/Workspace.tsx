@@ -1,5 +1,5 @@
 // The single main view («Mesa con inspector»): files, editor and mix, output settings, queue.
-// The content of each region arrives in steps 6 to 9; this places them for each layout.
+// This places each region for each layout.
 
 import { useSignal } from '@preact/signals';
 import type { JSX } from 'preact';
@@ -10,6 +10,7 @@ import { FileList, FilesHead } from './Files.tsx';
 import { Header } from './Header.tsx';
 import { ListIcon, MixIcon, SlidersIcon, WaveIcon } from './icons.tsx';
 import { layout } from './layout.ts';
+import { MixPanel } from './mix/Mix.tsx';
 import { Alerts } from './Notices.tsx';
 import { Inspector } from './output/Inspector.tsx';
 import { OutputFoot, QuickActions } from './output/Presets.tsx';
@@ -27,15 +28,6 @@ function FilesPanel({ onActivate }: { onActivate?: () => void }) {
     </section>
   );
 }
-
-const MixPanel = () => (
-  <section class="card mix" aria-labelledby="mix-title">
-    <h2 id="mix-title" class="panel-title">
-      {t('mix.title')}
-    </h2>
-    <p class="empty">{t('mix.empty')}</p>
-  </section>
-);
 
 type MobileView = 'files' | 'editor' | 'mix';
 
@@ -115,7 +107,7 @@ export function Workspace() {
             </button>
           </>
         )}
-        {view.value === 'mix' && <MixPanel />}
+        {view.value === 'mix' && <MixPanel compact />}
       </main>
       <nav class="bottom-nav" aria-label={t('nav.sections')}>
         {nav.map(([id, key, Icon]) => (

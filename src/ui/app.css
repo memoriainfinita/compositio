@@ -1196,3 +1196,264 @@ main:focus {
 .home .quick-actions {
   justify-content: center;
 }
+
+/* Mix («Definitivo», «MovilMezcla»). */
+.mix {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.mix-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+}
+
+.mix-head .panel-title {
+  margin: 0;
+}
+
+.mix-strip {
+  overflow-x: auto;
+  padding: 4px 0 8px;
+}
+
+.mix-track {
+  display: flex;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.mix-track .mix-item {
+  position: relative;
+  flex: none;
+  box-sizing: border-box;
+  border: 1px solid var(--control);
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--inset) 92%, transparent);
+}
+
+.mix-track .mix-item.active {
+  border-color: var(--accent);
+}
+
+.mix-item.missing {
+  border-style: dashed;
+  color: var(--muted);
+}
+
+.mix-clip {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 100%;
+  min-height: var(--touch);
+  padding: 8px;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: grab;
+}
+
+.mix-clip-head {
+  display: flex;
+  gap: 6px;
+  min-width: 0;
+  font-size: 12px;
+}
+
+.mix-clip-name {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.mix-thumb {
+  display: block;
+  width: 100%;
+  height: 28px;
+  border-radius: 3px;
+  background: var(--line);
+}
+
+svg.mix-thumb {
+  background: transparent;
+  fill: var(--wave);
+}
+
+.mix-overlap {
+  position: absolute;
+  top: -1px;
+  bottom: -1px;
+  left: -1px;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  box-sizing: border-box;
+  padding-bottom: 4px;
+  border: 1px solid var(--accent);
+  border-radius: 6px 0 0 6px;
+  background: var(--accent-tint);
+  color: var(--accent);
+  font-size: 11px;
+  white-space: nowrap;
+  cursor: ew-resize;
+  touch-action: none;
+}
+
+.mix-cut {
+  position: absolute;
+  top: -6px;
+  bottom: -6px;
+  left: -4px;
+  width: 6px;
+  padding: 0;
+  border: 0;
+  border-radius: 2px;
+  background: var(--warn);
+  cursor: pointer;
+}
+
+.mix-short {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: var(--warn);
+}
+
+.mix-foot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 16px;
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
+}
+
+.mix-options {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px 16px;
+}
+
+.mix-field {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--text-2);
+}
+
+.mix-rate {
+  width: auto;
+}
+
+.mix-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.icon-button.bordered {
+  border: 1px solid var(--control);
+}
+
+.mix-list {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.mix-list .mix-item {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.mix-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  width: 100%;
+  min-height: 52px;
+  padding: 0 4px 0 10px;
+  box-sizing: border-box;
+  border-radius: var(--radius);
+  background: var(--inset);
+}
+
+.mix-list .mix-item.missing .mix-row {
+  border: 1px dashed var(--dash);
+  background: transparent;
+}
+
+.mix-list .mix-clip {
+  flex: 1;
+  min-width: 0;
+  gap: 2px;
+  cursor: pointer;
+}
+
+.mix-grip {
+  display: flex;
+  color: var(--disabled);
+  cursor: grab;
+  touch-action: none;
+}
+
+.mix-chip {
+  min-height: 32px;
+  margin: 4px 0 4px 26px;
+  padding: 0 12px;
+  border: 1px solid var(--control);
+  border-radius: 999px;
+  background: var(--bar);
+  color: var(--accent);
+  font-size: 12px;
+}
+
+.mix.compact .mix-options {
+  flex-direction: column;
+  align-items: stretch;
+}
+
+.sortable-ghost {
+  opacity: 0.4;
+}
+
+.transition {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-width: min(380px, 100%);
+}
+
+.transition-names {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: 0;
+  font-size: 13px;
+}
+
+.range {
+  accent-color: var(--accent);
+}
+
+.check-row {
+  gap: 10px;
+  color: var(--text-2);
+}
+
+.transition-audio {
+  width: 100%;
+}

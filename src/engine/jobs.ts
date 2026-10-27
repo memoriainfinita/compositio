@@ -4,7 +4,9 @@
 import type { Silences } from '../model/edits.ts';
 import { keptRange, rangeLength } from '../model/edits.ts';
 import type { MediaInfo } from '../model/media.ts';
+import { matchGain, measureArgs, measureKeyOf, mixPlan, previewPlan, sourceOf, type MixClip, type MixError, type Source } from '../model/mix.ts';
 import { parseMeasurement, plan, type Measurement, type PlanInput, type Warning } from '../model/operations.ts';
+import type { MixSettings, Transition } from '../model/timeline.ts';
 import { parseSilences, PROBE_ARGS, silenceFilter, toMediaInfo, type ProbeJson } from './probe.ts';
 import { EngineError, failure, inputPath, outputPath, parseTime, type RunOptions, type Runner } from './runner.ts';
 
@@ -102,6 +104,83 @@ export async function measureFile(
   const measurement = parseMeasurement(p.measure.kind, r.log.join('\n'));
   if (!measurement) throw new EngineError('unexpected-output', r.log.slice(-12).join('\n'));
   return measurement;
+}
+
+export interface MixInput {
+  clips: readonly MixClip[];
+  /** The File of each clip, in the same order. */
+  files: readonly File[];
+  mix: MixSettings;
+  /** Loudness already measured, by `measureKeyOf`; new measurements are added to it. */
+  measured: Map<string, Measurement>;
+}
+
+/** Measures what matching needs and has not been measured yet; returns the gain of each clip. */
+async function gainsFor(
+  runner: Runner,
+  input: MixInput,
+  sources: readonly Source[],
+  { signal, onProgress }: RunOptions,
+): Promise<Map<string, number>> {
+  const gains = new Map<string, number>();
+  for (const [i, c] of input.clips.entries()) {
+    const source = sources[i]!;
+    const key = measureKeyOf(c.clip.fileId, source);
+    let m = input.measured.get(key);
+    if (!m) {
+      const file = input.files[i]!;
+      const r = await runner.run({ inputs: [file], args: measureArgs(source, inputPath(0, file)), outputs: [], duration: source.length }, { signal });
+      if (r.code !== 0) throw failure(r.log);
+      const parsed = parseMeasurement('loudnorm', r.log.join('\n'));
+      if (!parsed) throw new EngineError('unexpected-output', r.log.slice(-12).join('\n'));
+      m = parsed;
+      input.measured.set(key, m);
+    }
+    gains.set(c.clip.id, matchGain(m, input.mix.matchLufs));
+    onProgress?.((i + 1) / input.clips.length);
+  }
+  return gains;
+}
+
+export async function mixFiles(runner: Runner, input: MixInput, { signal, onProgress }: RunOptions = {}): Promise<Processed> {
+  const out = 'mix';
+  const p = mixPlan(input.clips, input.mix, input.files.map((f, i) => inputPath(i, f)), outputPath(out));
+  if ('error' in p) throw new EngineError('invalid-input', p.error);
+  const share = input.mix.matchLoudness ? MEASURE_SHARE : 0;
+  const gains = input.mix.matchLoudness ? await gainsFor(runner, input, p.sources, { signal, onProgress: (x) => onProgress?.(x * share) }) : null;
+  const args = p.render(gains);
+  if (!Array.isArray(args)) throw new EngineError('invalid-input', args.error);
+  const r = await runner.run(
+    { inputs: input.files, args, outputs: [out], duration: p.layout.duration },
+    { signal, onProgress: (x) => onProgress?.(share + x * (1 - share)) },
+  );
+  const blob = r.files.get(out);
+  if (r.code !== 0 || !blob) throw failure(r.log);
+  onProgress?.(1);
+  return { blob, extension: p.extension, warnings: [], measurement: null };
+}
+
+/** About 20 s around one transition, to listen to it before generating the mix. */
+export async function previewTransition(
+  runner: Runner,
+  input: MixInput & { transition: Transition },
+  options: RunOptions = {},
+): Promise<{ blob: Blob; crossAt: number }> {
+  const out = 'preview.wav';
+  const [a, b] = input.clips as [MixClip, MixClip];
+  let gains: Map<string, number> | null = null;
+  if (input.mix.matchLoudness) {
+    const sources = input.clips.map(sourceOf);
+    const bad = sources.find((s): s is { error: MixError } => 'error' in s);
+    if (bad) throw new EngineError('invalid-input', bad.error);
+    gains = await gainsFor(runner, input, sources as Source[], { signal: options.signal });
+  }
+  const p = previewPlan([a, b], input.transition, input.mix, gains, [inputPath(0, input.files[0]!), inputPath(1, input.files[1]!)], outputPath(out));
+  if ('error' in p) throw new EngineError('invalid-input', p.error);
+  const r = await runner.run({ inputs: input.files, args: p.args, outputs: [out], duration: p.duration }, options);
+  const blob = r.files.get(out);
+  if (r.code !== 0 || !blob) throw failure(r.log);
+  return { blob: new Blob([blob], { type: 'audio/wav' }), crossAt: p.crossAt };
 }
 
 export type ListenFormat = 'opus' | 'aac';

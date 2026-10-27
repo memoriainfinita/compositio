@@ -89,11 +89,13 @@ function Check({ ctx, step, name, label, checked, onChange }: { ctx: Ctx; step: 
 }
 
 /** A number applied when it is left or Enter is pressed, kept inside the schema's range. */
-function NumberField({ id, value, min, max, step, unit, onChange }: { id: string; value: number; min: number; max: number; step: number; unit?: string; onChange(n: number): void }) {
+export function NumberField({ id, value, min, max, step, unit, label, onChange }: { id: string; value: number; min: number; max: number; step: number; unit?: string; label?: string; onChange(n: number): void }) {
   return (
     <span class="row number-field">
       <input
         id={id}
+        aria-label={label}
+        title={label}
         class="input mono"
         type="number"
         min={min}
