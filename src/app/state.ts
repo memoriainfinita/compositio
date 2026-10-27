@@ -8,6 +8,7 @@ import type { Engine } from '../engine/index.ts';
 import type { Project } from '../model/project.ts';
 import type { Store } from '../model/store.ts';
 import { createFiles, type Files } from './files.ts';
+import { createMontageLibrary, type MontageLibrary } from './montages.ts';
 import { createPresetStore, type PresetStore } from './presets.ts';
 
 /** Bytes of the core downloaded so far; null before loading starts or when it is not tracked. */
@@ -20,13 +21,21 @@ export interface AppState {
   canRedo: ReadonlySignal<boolean>;
   files: Files;
   presets: PresetStore;
+  montages: MontageLibrary;
   engine: Engine | null;
   engineLoad: Signal<EngineLoad>;
   /** Set when a new version waits; calling it applies the version. */
   update: Signal<(() => void) | null>;
 }
 
-export function createAppState(store: Store, engine: Engine | null = null, presets: PresetStore = createPresetStore([], () => {})): AppState {
+const nowhere = { put: async () => {}, remove: async () => {} };
+
+export function createAppState(
+  store: Store,
+  engine: Engine | null = null,
+  presets: PresetStore = createPresetStore([], () => {}),
+  montages: MontageLibrary = createMontageLibrary([], nowhere),
+): AppState {
   const project = signal(store.get());
   const canUndo = signal(store.canUndo());
   const canRedo = signal(store.canRedo());
@@ -37,7 +46,7 @@ export function createAppState(store: Store, engine: Engine | null = null, prese
     canUndo.value = store.canUndo();
     canRedo.value = store.canRedo();
   });
-  return { store, project, canUndo, canRedo, files, presets, engine, engineLoad: signal(null), update: signal(null) };
+  return { store, project, canUndo, canRedo, files, presets, montages, engine, engineLoad: signal(null), update: signal(null) };
 }
 
 export const AppContext = createContext<AppState | null>(null);

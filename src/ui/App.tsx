@@ -4,6 +4,7 @@ import { t } from '../i18n/index.ts';
 import { dragging, useDropAnywhere } from './adding.ts';
 import { Home } from './Home.tsx';
 import { announcement } from './layout.ts';
+import { MontageDialogs } from './Montages.tsx';
 import { Workspace } from './Workspace.tsx';
 
 const editable = (target: EventTarget | null): boolean =>
@@ -38,6 +39,7 @@ function Shell() {
         {t('app.skip')}
       </a>
       {project.value.files.length === 0 ? <Home /> : <Workspace />}
+      <MontageDialogs />
       {dragging.value && (
         <div class="drop-overlay" aria-hidden="true">
           <span>{t('home.drop')}</span>

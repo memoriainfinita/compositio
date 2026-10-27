@@ -21,7 +21,7 @@ async function openWorkspace(page: Page) {
   await open(page);
   await page.evaluate(async () => {
     const db = await new Promise<IDBDatabase>((resolve, reject) => {
-      const r = indexedDB.open('compositio', 1);
+      const r = indexedDB.open('compositio');
       r.onsuccess = () => resolve(r.result);
       r.onerror = () => reject(r.error);
     });
@@ -111,7 +111,7 @@ test.describe('desktop workspace', () => {
 
   test('montages popup traps focus, closes with Esc and gives the focus back', async ({ page }) => {
     await openWorkspace(page);
-    const opener = page.getByRole('button', { name: 'Montajes' });
+    const opener = page.getByRole('button', { name: 'Abrir montaje' });
     await opener.click();
     const dialog = page.getByRole('dialog', { name: 'Montajes' });
     await expect(dialog).toBeVisible();

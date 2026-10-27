@@ -14,6 +14,7 @@ import { fileSize, shortTime } from '../format.ts';
 import { CloseIcon, ListIcon, SlidersIcon, WarnIcon } from '../icons.tsx';
 import { announce } from '../layout.ts';
 import { Dialog } from '../Dialog.tsx';
+import { montageDialog } from '../Montages.tsx';
 import { NumberField } from '../output/Inspector.tsx';
 import { MAX_TRANSITION, seconds, TransitionDialog } from './Transition.tsx';
 
@@ -421,6 +422,16 @@ export function MixPanel({ compact }: { compact?: boolean }) {
           <Dialog open={options.value} onClose={() => (options.value = false)} title={t('mix.options')} variant="sheet">
             <MixOptions />
             <div class="dialog-actions">
+              <button
+                type="button"
+                class="button"
+                onClick={() => {
+                  options.value = false;
+                  montageDialog.value = 'save';
+                }}
+              >
+                {t('montage.save')}
+              </button>
               <button type="button" class="button primary" onClick={() => (options.value = false)}>
                 {t('mix.done')}
               </button>

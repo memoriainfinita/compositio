@@ -3,6 +3,7 @@ import '@fontsource-variable/jetbrains-mono/wght.css';
 import './ui/theme.css';
 import './ui/app.css';
 import { render } from 'preact';
+import { createMontageLibrary } from './app/montages.ts';
 import { createPresetStore, starterPresets } from './app/presets.ts';
 import { createAppState } from './app/state.ts';
 import { createEngine } from './engine/index.ts';
@@ -46,8 +47,14 @@ async function boot() {
     : createPresetStore([], () => {});
   if (loaded.ok && loaded.value === null) save(presets.list.value);
 
+  const records = (await storage?.listMontages().catch(() => [])) ?? [];
+  const montages = createMontageLibrary(records, {
+    put: (r) => storage?.putMontage(r) ?? Promise.resolve(),
+    remove: (id) => storage?.deleteMontage(id) ?? Promise.resolve(),
+  });
+
   const engine = createEngine();
-  const app = createAppState(store, engine, presets);
+  const app = createAppState(store, engine, presets, montages);
   render(<App state={app} />, document.getElementById('app')!);
   root.dataset.app = 'ready';
 

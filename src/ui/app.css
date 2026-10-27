@@ -1457,3 +1457,84 @@ svg.mix-thumb {
 .transition-audio {
   width: 100%;
 }
+
+/* Montages («PopMontajes», «PopReabrir»). */
+.montage-list,
+.reopen-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 0 0 12px;
+  padding: 0;
+  list-style: none;
+}
+
+.montage-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-height: 54px;
+  padding: 0 12px;
+  border: 1px solid transparent;
+  border-radius: var(--radius);
+  background: var(--inset);
+  color: var(--text);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.montage-item[aria-pressed='true'] {
+  border-color: var(--accent);
+  background: var(--accent-weak);
+}
+
+.montage-item:disabled {
+  color: var(--muted);
+  cursor: default;
+}
+
+.montage-text {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.montage-save {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: min(360px, 100%);
+}
+
+.reopen-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 46px;
+  padding: 0 12px;
+  border: 1px solid transparent;
+  border-radius: var(--radius);
+  background: var(--inset);
+}
+
+.reopen-item.missing {
+  border-color: var(--warn-line);
+  color: var(--warn);
+}
+
+.reopen-state {
+  flex: none;
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+  background: var(--accent);
+}
+
+.reopen-item.missing .reopen-state {
+  border: 2px solid var(--warn);
+  background: transparent;
+}

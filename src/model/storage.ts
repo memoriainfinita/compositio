@@ -4,8 +4,17 @@
 import { APP_SETTINGS, MONTAGE, PRESETS, parseDoc, serializeDoc, type AppSettings, type FormatDef, type Montage, type ParseError, type Preset } from './formats.ts';
 
 const DB_NAME = 'compositio';
-const DB_VERSION = 1;
+const DB_VERSION = 2;
 const KV = 'kv';
+/** Saved montages, one record each (version 2). */
+const MONTAGES = 'montages';
+
+/** A saved montage as stored: `doc` is a `compositio.montage` document, read through `parseDoc`. */
+export interface StoredMontage {
+  id: string;
+  savedAt: number;
+  doc: unknown;
+}
 const KEYS = { session: 'session', presets: 'presets', settings: 'settings' } as const;
 
 export type Loaded<T> = { ok: true; value: T | null } | { ok: false; error: ParseError };
@@ -18,6 +27,9 @@ export interface Storage {
   savePresets(presets: readonly Preset[]): Promise<void>;
   loadSettings(): Promise<Loaded<AppSettings>>;
   saveSettings(settings: AppSettings): Promise<void>;
+  listMontages(): Promise<StoredMontage[]>;
+  putMontage(record: StoredMontage): Promise<void>;
+  deleteMontage(id: string): Promise<void>;
   close(): void;
 }
 
@@ -31,18 +43,20 @@ export async function openStorage(factory: IDBFactory = indexedDB): Promise<Stor
   const open = factory.open(DB_NAME, DB_VERSION);
   open.onupgradeneeded = () => {
     if (!open.result.objectStoreNames.contains(KV)) open.result.createObjectStore(KV);
+    if (!open.result.objectStoreNames.contains(MONTAGES)) open.result.createObjectStore(MONTAGES, { keyPath: 'id' });
   };
   const db = await promised(open);
 
   const get = async (key: string): Promise<unknown> => promised(db.transaction(KV).objectStore(KV).get(key));
-  const put = async (key: string, value: unknown): Promise<void> => {
-    const tx = db.transaction(KV, 'readwrite');
-    tx.objectStore(KV).put(value, key);
+  const write = async (store: string, act: (s: IDBObjectStore) => void): Promise<void> => {
+    const tx = db.transaction(store, 'readwrite');
+    act(tx.objectStore(store));
     await new Promise<void>((resolve, reject) => {
       tx.oncomplete = () => resolve();
       tx.onerror = tx.onabort = () => reject(tx.error);
     });
   };
+  const put = (key: string, value: unknown): Promise<void> => write(KV, (s) => s.put(value, key));
   const load = async <T, R>(key: string, def: FormatDef<T>, pick: (v: T) => R): Promise<Loaded<R>> => {
     const raw = await get(key);
     if (raw === undefined) return { ok: true, value: null };
@@ -61,6 +75,9 @@ export async function openStorage(factory: IDBFactory = indexedDB): Promise<Stor
     savePresets: (presets) => put(KEYS.presets, serializeDoc(PRESETS, { presets: [...presets] })),
     loadSettings: () => load(KEYS.settings, APP_SETTINGS, (s) => s),
     saveSettings: (settings) => put(KEYS.settings, serializeDoc(APP_SETTINGS, settings)),
+    listMontages: () => promised(db.transaction(MONTAGES).objectStore(MONTAGES).getAll() as IDBRequest<StoredMontage[]>),
+    putMontage: (record) => write(MONTAGES, (s) => s.put(record)),
+    deleteMontage: (id) => write(MONTAGES, (s) => s.delete(id)),
     close: () => db.close(),
   };
 }

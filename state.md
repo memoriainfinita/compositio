@@ -40,6 +40,8 @@ Web estática en GitHub Pages, en PC y móvil, para preparar audio y vídeo de e
 - Decidido al implementar el paso 8, sin revisar por el usuario: la marca de valor propio es el punto naranja de la lista de archivos (no acento); una acción rápida aplica el preset como lote y los ajustes propios del archivo encima; un lote va en zip si algún archivo lo pide; un trabajo reintentado no se descarga solo (botón en `PopCola`); el pie de «Salida» queda fijo abajo en escritorio; nombre del zip: el del montaje o `compositio.zip`
 - Paso 9 hecho (2026-10-28): mezcla, diseño en `docs/paso-9-diseno-2026-10-28.md` (sin revisar por el usuario). Orden de ffmpeg en `src/model/mix.ts` (entradas con `-ss`/`-t`, fundidos del archivo, `acrossfade` o `concat`, fundidos de la mezcla), trabajos `mixFiles` y `previewTransition` en el motor, tira y lista móvil en `src/ui/mix/` con SortableJS 1.15.7 (`forceFallback`), `PopTransicion` con escucha, tiempos CSV, aviso de memoria. Igualar volumen: ganancia lineal hacia `matchLufs` (nuevo, -14 por defecto) limitada a -1 dBTP. 15 pruebas unitarias y 5 e2e por tema
 - Decidido al implementar el paso 9, sin revisar por el usuario: WAV de 24 bits y MP3 CBR 320; nombre `mezcla` sin nombre de montaje; aviso de memoria por encima de 1 GiB; en móvil, un botón «Opciones de la mezcla» en vez de las fichas de resumen del lienzo; la curva de la transición en `PopTransicion` (el lienzo no la tiene); arrastrar el solape crea una transición propia de la pista
+- Paso 10 hecho (2026-10-28): montajes, diseño en `docs/paso-10-diseno-2026-10-28.md` (sin revisar por el usuario). Biblioteca en `src/app/montages.ts` sobre el almacén `montages` de IndexedDB (base de datos versión 2); `id` opcional en el montaje para sustituir al guardar; abrir es un paso de deshacer y trae los archivos de la sesión que coinciden; `PopMontajes`, guardar con nombre y `PopReabrir` en `src/ui/Montages.tsx`. Un `Dialog` desmontado abierto se cierra antes, para devolver el foco
+- Decidido al implementar el paso 10, sin revisar por el usuario: «Nuevo montaje» y «Borrar» en `PopMontajes` (el lienzo no los tiene); «Guardar como nuevo» en el popup de guardar; un archivo quitado del proyecto sigue en la sesión y cuenta como encontrado al abrir un montaje que lo usa
 - e2e: 67 en Firefox (service worker 4, interfaz 9 + archivos 7 + editor 6 + salida 8 en cada tema, motor 3); axe sin infracciones WCAG 2.2 AA en las tres disposiciones y los dos temas. 223 pruebas unitarias (contando cada par de contraste del tema)
 - e2e intermitentes (2026-10-27): «a restored session…» (archivos) y las de actualización del service worker fallaron por tiempo en la batería completa; solas pasan. En la primera, el motor tardó 35-80 s en quedar listo cuando axe analizaba la página justo tras recargar, con el núcleo ya en la caché del service worker: el guardado del service worker queda descartado. Sin axe, recargar a mitad de descarga da 2-5 s. Horas después, el mismo código pasó 3 de 3, el diagnóstico 5 de 5 sin atascos y la batería completa 51 de 51. Causa sin confirmar
 
@@ -74,7 +76,7 @@ Web estática en GitHub Pages, en PC y móvil, para preparar audio y vídeo de e
 ## TODO
 
 - [ ] Paso 1 en el Xiaomi (`spikes/` con `?run=all` por `adb reverse tcp:4173`)
-- [ ] Revisión de los pasos 6 a 9 por el usuario
+- [ ] Revisión de los pasos 6 a 10 por el usuario
 - [ ] En móvil, «Nueva versión: recargar» tapa la barra inferior (visto 2026-10-27)
 - [ ] e2e intermitentes por tiempo en la batería completa (ver Status): repetir cuando vuelva a fallar y medir la carga del motor tras axe
-- [ ] Fase 1 según `docs/plan-2026-10-27.md`; siguiente: paso 10 (montajes)
+- [ ] Fase 1 según `docs/plan-2026-10-27.md`; siguiente: paso 11 (PWA y cierre de la aplicación)

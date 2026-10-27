@@ -41,10 +41,11 @@ export function mixClips(project: Project, files: Files): { clips: MixClip[]; fi
 
 /**
  * Lengths for the strip: the clips here are measured from their file; a missing one keeps the
- * duration saved with the montage, so the strip still shows where it would go.
+ * duration saved with the montage, so the strip still shows where it would go. Without `files`,
+ * every clip takes its saved duration, as a saved montage in the library.
  */
-export function stripLayout(project: Project, files: Files): Layout {
-  const lengths = lengthsOf(mixClips(project, files).clips);
+export function stripLayout(project: Project, files?: Files): Layout {
+  const lengths = files ? lengthsOf(mixClips(project, files).clips) : new Map<string, number>();
   for (const c of project.clips) {
     if (lengths.has(c.id)) continue;
     const ref = project.files.find((f) => f.id === c.fileId);

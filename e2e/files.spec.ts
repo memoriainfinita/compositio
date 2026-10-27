@@ -191,7 +191,7 @@ test('a restored session shows the missing file and pairs it when it is dropped'
   await open(page);
   await page.evaluate(async (size) => {
     const db = await new Promise<IDBDatabase>((resolve, reject) => {
-      const r = indexedDB.open('compositio', 1);
+      const r = indexedDB.open('compositio');
       r.onsuccess = () => resolve(r.result);
       r.onerror = () => reject(r.error);
     });

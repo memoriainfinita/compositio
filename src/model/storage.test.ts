@@ -29,7 +29,7 @@ describe('storage', () => {
     const factory = new IDBFactory();
     const s = await openStorage(factory);
     const db = await new Promise<IDBDatabase>((resolve) => {
-      const r = factory.open('compositio', 1);
+      const r = factory.open('compositio', 2);
       r.onsuccess = () => resolve(r.result);
     });
     await new Promise((resolve) => {
@@ -39,6 +39,17 @@ describe('storage', () => {
     });
     expect(await s.loadSession()).toEqual({ ok: false, error: { code: 'too-new', version: 99 } });
     db.close();
+    s.close();
+  });
+
+  it('keeps saved montages apart, one record each', async () => {
+    const factory = new IDBFactory();
+    const s = await openStorage(factory);
+    await s.putMontage({ id: 'm1', savedAt: 1, doc: { format: 'compositio.montage', version: 1, files: [] } });
+    await s.putMontage({ id: 'm2', savedAt: 2, doc: { format: 'compositio.montage', version: 1, files: [] } });
+    await s.putMontage({ id: 'm1', savedAt: 3, doc: { format: 'compositio.montage', version: 1, files: [], name: 'b' } });
+    await s.deleteMontage('m2');
+    expect(await s.listMontages()).toEqual([{ id: 'm1', savedAt: 3, doc: { format: 'compositio.montage', version: 1, files: [], name: 'b' } }]);
     s.close();
   });
 });

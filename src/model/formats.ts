@@ -78,6 +78,8 @@ export type FileRef = v.InferOutput<typeof FileRefSchema>;
 
 export const MontageSchema = v.pipe(
   v.object({
+    /** The saved montage this work comes from, so saving again replaces it; null when never saved. */
+    id: v.optional(v.nullable(v.string()), null),
     name: v.optional(v.string(), ''),
     files: v.array(FileRefSchema),
     clips: v.optional(v.array(ClipSchema), []),

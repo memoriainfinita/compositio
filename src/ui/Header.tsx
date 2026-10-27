@@ -1,10 +1,9 @@
-import { useSignal } from '@preact/signals';
 import { useApp } from '../app/state.ts';
 import { t } from '../i18n/index.ts';
-import { Dialog } from './Dialog.tsx';
 import { FolderIcon, ListIcon, RedoIcon, UndoIcon } from './icons.tsx';
 import { layout } from './layout.ts';
 import { Logo } from './Logo.tsx';
+import { montageDialog } from './Montages.tsx';
 
 interface Props {
   /** The start screen: no undo, and opening a montage instead of the montage menu. */
@@ -15,7 +14,6 @@ interface Props {
 
 export function Header({ home = false, onFiles }: Props) {
   const { store, project, canUndo, canRedo } = useApp();
-  const montages = useSignal(false);
   const compact = layout.value === 'mobile';
   const files = project.value.files.length;
 
@@ -43,17 +41,21 @@ export function Header({ home = false, onFiles }: Props) {
         </>
       )}
       {compact && !home ? (
-        <button type="button" class="icon-button" aria-label={t('header.montages')} title={t('header.montages')} onClick={() => (montages.value = true)}>
+        <button type="button" class="icon-button" aria-label={t('header.montages')} title={t('header.montages')} aria-haspopup="dialog" onClick={() => (montageDialog.value = 'library')}>
           <FolderIcon />
         </button>
       ) : (
-        <button type="button" class="button" onClick={() => (montages.value = true)}>
-          {home ? t('home.open') : t('header.montages')}
-        </button>
+        <>
+          <button type="button" class="button" aria-haspopup="dialog" onClick={() => (montageDialog.value = 'library')}>
+            {t('montage.open')}
+          </button>
+          {!home && (
+            <button type="button" class="button" aria-haspopup="dialog" onClick={() => (montageDialog.value = 'save')}>
+              {t('montage.save')}
+            </button>
+          )}
+        </>
       )}
-      <Dialog open={montages.value} onClose={() => (montages.value = false)} title={t('header.montages')}>
-        {null}
-      </Dialog>
     </header>
   );
 }

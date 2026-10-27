@@ -12,6 +12,7 @@ export type Project = Montage;
 export const newId = (): string => crypto.randomUUID();
 
 export const emptyProject = (): Project => ({
+  id: null,
   name: '',
   files: [],
   clips: [],
@@ -108,6 +109,9 @@ export function setMix(p: Project, values: Partial<MixSettings>): Project {
 }
 
 export const rename = (p: Project, name: string): Project => (name === p.name ? p : { ...p, name });
+
+/** After saving: the name it was saved with and the id of the saved montage. */
+export const markSaved = (p: Project, id: string, name: string): Project => (p.id === id && p.name === name ? p : { ...p, id, name });
 
 export interface Candidate {
   name: string;

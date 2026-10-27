@@ -26,6 +26,14 @@ export function Dialog({ open, onClose, title, variant = 'popup', children }: Pr
     if (!open && dialog.open) dialog.close();
   }, [open]);
 
+  // A dialog removed while open closes first, so the focus still goes back where it was.
+  useEffect(() => {
+    const dialog = ref.current;
+    return () => {
+      if (dialog?.open) dialog.close();
+    };
+  }, []);
+
   return (
     <dialog
       ref={ref}
