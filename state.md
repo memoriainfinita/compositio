@@ -1,0 +1,49 @@
+---
+created: 2026-10-27
+last_updated: 2026-10-27
+---
+
+# compositio — state
+
+Qué es verdad ahora. Lo que ya pasó vive en `state-history.md`.
+
+## Project
+
+Web estática en GitHub Pages, en PC y móvil, para preparar audio y vídeo de espectáculos con ffmpeg.wasm en el navegador: mezclas continuas, recortes, unir y partir, normalizar, recodificar. Licencia GPL-3.0.
+
+## Status
+
+- Contenido del spec confirmado: `docs/spec-2026-10-27.md`
+- Arquitectura: GitHub Pages + ffmpeg.wasm (2026-10-27). `@ffmpeg/core` y `core-mt` instalados; `@ffmpeg/ffmpeg` y `util` llegan con el motor (paso 4)
+- Sin MVP: robusta y profesional desde el principio (2026-10-27). TypeScript 6.0.3 (typescript-eslint no admite el 7) + Vite 8 + pnpm; `vendor/` archivado en `.archive/`
+- Lienzo de diseño: https://claude.ai/artifact/S5yZdu4UddtHnTEpRWMAPy. Página «Diseño» al día con el spec (2026-10-27), página «Archivo» con lo superado; sin revisar por el usuario; detalle en la sección «Interfaz» del spec
+- Hoja de ruta y plan de la fase 1 escritos: `docs/plan-2026-10-27.md`
+- Paso 1 (pruebas de riesgo) hecho en Firefox de escritorio; resultados en la sección «Pruebas de riesgo» del spec. Falta el Xiaomi (sin conectar por adb) y confirmar el multihilo en GitHub Pages en el paso 2
+- `spikes/`: proyecto desechable de las pruebas (pnpm + Vite, `?run=all` las lanza todas); se archiva al cerrar el paso 1
+- Librería de zip: client-zip 2.5.1 (2026-10-27)
+- Paso 2 hecho en local: repo git (rama `main`, sin remoto), lint, Vitest, Playwright en Firefox (3 e2e del service worker pasan), CI con despliegue a Pages, LICENSE GPL-3.0-only, README, CONTRIBUTING, CHANGELOG. Falta crear el repo en GitHub, activar Pages y ver pasar la CI
+- Service worker propio (`src/sw/`, sin vite-plugin-pwa): cabeceras COOP/COEP, app precacheada, núcleos de ffmpeg en caché al primer uso, versión nueva solo al aceptarla. Sin cubrir por e2e: la recarga tras Ctrl+Mayús+R
+- Interfaz: solo un marcador de posición y el aviso de versión nueva, hasta el paso 5
+
+## Patterns
+
+- [ffmpeg] Mezcla continua con `acrossfade` encadenado en un solo filtergraph, cada pista antes a `aresample=44100,aformat=fltp:stereo`. Confirmed 2026-10.
+- [ffmpeg] Filtergraph largo a archivo con `-/filter_complex <file>` (ffmpeg 8.1.1 nativo) para no superar el límite de línea de comandos. Confirmed 2026-10.
+- [ffmpeg.wasm] Es ffmpeg 5.1.4: sin `-/filter_complex`; el grafo va en línea (sin límite de argumentos) o con `-filter_complex_script`. Confirmed 2026-10.
+- [ffmpeg.wasm] WORKERFS: `createDir` antes de `mount`. Confirmed 2026-10.
+- [ffmpeg.wasm] core-mt con libx264: hilos explícitos (`-threads 2`); con hilos automáticos el worker aborta. Confirmed 2026-10.
+- [sw] Firefox dispara `controllerchange` también en una página ya aislada por el mismo worker: recargar solo si no está aislada o si el usuario aceptó la versión. Confirmed 2026-10.
+- [e2e] Playwright no intercepta `sw.js` en Firefox: las pruebas de actualización sirven `dist` con su propio servidor. Esperar el aislamiento con `waitForFunction`, que sobrevive a la recarga. Confirmed 2026-10.
+- [sw] Cachés con prefijo `compositio-`: en github.io comparten CacheStorage con otras apps del mismo origen. Confirmed 2026-10.
+
+## Preferences
+
+- Firefox como navegador de pruebas
+- Sin textos de ayuda visibles junto a controles; la explicación, en tooltip
+- pnpm, nunca npm, si hay dependencias JS
+
+## TODO
+
+- [ ] Crear `memoriainfinita/compositio` en GitHub, push, activar Pages (fuente: GitHub Actions) y confirmar el multihilo en Pages
+- [ ] Paso 1 en el Xiaomi (`spikes/` con `?run=all` por `adb reverse tcp:4173`)
+- [ ] Fase 1 según `docs/plan-2026-10-27.md`; siguiente: paso 3 (modelo y estado)

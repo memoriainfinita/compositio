@@ -1,0 +1,10 @@
+# Changelog
+
+Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versions: [semver](https://semver.org/).
+
+## [Unreleased]
+
+### Added
+
+- Project setup: pnpm, Vite, TypeScript, ESLint, Vitest, Playwright in Firefox, CI and deployment to GitHub Pages
+- Service worker: cross-origin isolation, offline app shell, versioned ffmpeg.wasm cache, updates on user request

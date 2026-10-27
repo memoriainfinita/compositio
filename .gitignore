@@ -1,0 +1,11 @@
+node_modules
+dist
+public/ffmpeg
+test-results
+playwright-report
+.vite
+.env*
+.DS_Store
+.archive/
+.backups/
+spikes/public
