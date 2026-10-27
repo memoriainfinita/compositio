@@ -6,6 +6,7 @@ import { chooseFiles } from './adding.ts';
 import { Header } from './Header.tsx';
 import { Logo } from './Logo.tsx';
 import { Alerts, Analyzing, EngineLoading } from './Notices.tsx';
+import { QuickActions } from './output/Presets.tsx';
 
 export function Home() {
   const app = useApp();
@@ -27,6 +28,7 @@ export function Home() {
               </button>
             </div>
           </div>
+          <QuickActions />
           <Analyzing />
           <Alerts />
           <EngineLoading />

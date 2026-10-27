@@ -143,7 +143,7 @@ test.describe('tablet workspace', () => {
     await expect(page.getByRole('tab', { name: '5 Nombre y descarga' })).toBeFocused();
     await page.keyboard.press('ArrowRight');
     await expect(first).toBeFocused();
-    await expect(page.getByRole('tabpanel')).toContainText('1 Extraer audio');
+    await expect(page.getByRole('tabpanel', { name: '1 Extraer audio' })).toContainText('Pista de audio');
     await expectAccessible(page);
   });
 });

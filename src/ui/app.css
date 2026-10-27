@@ -949,3 +949,250 @@ main:focus {
 .workspace.mobile .wave-handle.region {
   height: 24px;
 }
+
+/* Output: inspector, its foot, the queue and presets */
+
+.inspector {
+  display: grid;
+  gap: 10px;
+}
+
+.scope {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.scope-file {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.step-body {
+  display: grid;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.setting {
+  display: grid;
+  grid-template-areas: 'label label' 'control reset';
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 4px 6px;
+}
+
+.setting > label {
+  grid-area: label;
+}
+
+.setting-control {
+  grid-area: control;
+}
+
+.setting-reset {
+  grid-area: reset;
+}
+
+.setting label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--text-2);
+  font-size: 0.8125rem;
+}
+
+.setting-control {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.setting-control > select,
+.setting-control > .pattern {
+  flex: 1;
+  min-width: 0;
+}
+
+/* A checkbox reads as one line: box, its name, then the way back to the batch. */
+.setting:has(> .setting-control > .check) {
+  grid-template-areas: 'control label reset';
+  grid-template-columns: auto 1fr auto;
+}
+
+.icon-button.small {
+  width: 28px;
+  height: 28px;
+}
+
+.icon-button.small svg {
+  width: 14px;
+  height: 14px;
+}
+
+.number-field .input.mono {
+  width: 9ch;
+}
+
+.input.mono.pattern {
+  width: auto;
+}
+
+.tokens {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.example {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.step-warnings {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.step-warning {
+  margin: 0;
+  padding: 8px 10px;
+  border: 1px solid var(--warn-line);
+  border-radius: var(--radius);
+  background: var(--warn-bg);
+  color: var(--warn-text);
+  font-size: 0.8125rem;
+}
+
+.output-foot {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 8px;
+  margin-top: 14px;
+}
+
+/* A select is as wide as its longest option unless told otherwise. */
+.output-foot select,
+.setting-control select {
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+/* Desktop: «Procesar» stays in sight while the five steps scroll. */
+.output-column .output-foot {
+  position: sticky;
+  bottom: -16px;
+  margin: 14px -16px -16px;
+  padding: 12px 16px 16px;
+  border-top: 1px solid var(--line);
+  background: var(--inset);
+}
+
+.queue-open {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: var(--touch);
+  padding: 0 8px;
+  border: none;
+  border-radius: var(--radius);
+  background: transparent;
+  color: inherit;
+  text-align: left;
+}
+
+.queue-open:hover:not(:disabled) {
+  background: var(--surface);
+}
+
+.queue-progress,
+.job-progress {
+  flex: 1;
+  max-width: 320px;
+  height: 6px;
+  accent-color: var(--accent);
+}
+
+.job-list,
+.preset-list {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.job {
+  display: grid;
+  gap: 6px;
+  padding: 10px 12px;
+  border-radius: var(--radius);
+  background: var(--inset);
+}
+
+.job-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.job-name {
+  overflow-wrap: anywhere;
+}
+
+.job-progress {
+  width: 100%;
+  max-width: none;
+}
+
+.job-error {
+  margin: 0;
+  color: var(--warn-text);
+}
+
+.job-actions,
+.dialog-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.dialog-actions {
+  margin-top: 16px;
+}
+
+.preset-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.preset-row .input {
+  flex: 1;
+  min-width: 12ch;
+}
+
+.preset-save {
+  margin-top: 16px;
+}
+
+.quick-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+
+.button.quick[aria-disabled='true'] {
+  color: var(--disabled);
+}
+
+.home .quick-actions {
+  justify-content: center;
+}

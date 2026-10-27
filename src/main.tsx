@@ -3,9 +3,11 @@ import '@fontsource-variable/jetbrains-mono/wght.css';
 import './ui/theme.css';
 import './ui/app.css';
 import { render } from 'preact';
+import { createPresetStore, starterPresets } from './app/presets.ts';
 import { createAppState } from './app/state.ts';
 import { createEngine } from './engine/index.ts';
-import { bindDocumentLang, lang, resolveLang } from './i18n/index.ts';
+import { bindDocumentLang, lang, resolveLang, t } from './i18n/index.ts';
+import type { Preset } from './model/formats.ts';
 import { emptyProject } from './model/project.ts';
 import { createStore } from './model/store.ts';
 import { createAutosave, openStorage, type Storage } from './model/storage.ts';
@@ -36,8 +38,16 @@ async function boot() {
     console.warn('saved session not readable', session.error);
   }
 
+  // Presets this version cannot read are never overwritten either; a first run gets the starters.
+  const loaded = (await storage?.loadPresets()) ?? { ok: true as const, value: null };
+  const save = (list: readonly Preset[]) => void storage?.savePresets(list).catch((e) => console.error('presets', e));
+  const presets = loaded.ok
+    ? createPresetStore(loaded.value ?? starterPresets([t('preset.wav'), t('preset.theatre'), t('preset.mp3')]), save)
+    : createPresetStore([], () => {});
+  if (loaded.ok && loaded.value === null) save(presets.list.value);
+
   const engine = createEngine();
-  const app = createAppState(store, engine);
+  const app = createAppState(store, engine, presets);
   render(<App state={app} />, document.getElementById('app')!);
   root.dataset.app = 'ready';
 

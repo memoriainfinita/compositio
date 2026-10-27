@@ -4,7 +4,6 @@
 import { useSignal } from '@preact/signals';
 import type { JSX } from 'preact';
 import { t, type Key } from '../i18n/index.ts';
-import { STEPS, type Step } from '../model/settings.ts';
 import { Dialog } from './Dialog.tsx';
 import { EditorPanel } from './editor/Editor.tsx';
 import { FileList, FilesHead } from './Files.tsx';
@@ -12,8 +11,9 @@ import { Header } from './Header.tsx';
 import { ListIcon, MixIcon, SlidersIcon, WaveIcon } from './icons.tsx';
 import { layout } from './layout.ts';
 import { Alerts } from './Notices.tsx';
-import { STEP_LABEL } from './steps.ts';
-import { Tabs } from './Tabs.tsx';
+import { Inspector } from './output/Inspector.tsx';
+import { OutputFoot, QuickActions } from './output/Presets.tsx';
+import { QueueBar } from './output/Queue.tsx';
 
 function FilesPanel({ onActivate }: { onActivate?: () => void }) {
   return (
@@ -21,6 +21,7 @@ function FilesPanel({ onActivate }: { onActivate?: () => void }) {
       <h2 id="files-title" class="panel-title">
         {t('files.title')}
       </h2>
+      <QuickActions />
       <FilesHead />
       <FileList onActivate={onActivate} />
     </section>
@@ -34,39 +35,6 @@ const MixPanel = () => (
     </h2>
     <p class="empty">{t('mix.empty')}</p>
   </section>
-);
-
-/** Desktop: the five steps in order, all visible. Tablet and phone: numbered tabs. */
-function OutputSteps({ tabs }: { tabs: boolean }) {
-  const step = useSignal<Step>('extract');
-  const label = (s: Step) => `${STEPS.indexOf(s) + 1} ${t(STEP_LABEL[s])}`;
-  if (!tabs) {
-    return (
-      <ol class="steps">
-        {STEPS.map((s) => (
-          <li key={s} class="step">
-            <h3 class="step-title">{label(s)}</h3>
-          </li>
-        ))}
-      </ol>
-    );
-  }
-  return (
-    <Tabs label={t('output.steps')} idPrefix="output" tabs={STEPS.map((s) => ({ id: s, label: label(s) }))} selected={step.value} onSelect={(s) => (step.value = s)}>
-      <h3 class="step-title">{label(step.value)}</h3>
-    </Tabs>
-  );
-}
-
-const QueueBar = () => (
-  <footer class="queue-bar" aria-labelledby="queue-title">
-    <span id="queue-title" class="strong">
-      {t('queue.title')}
-    </span>
-    <span role="status" class="muted small">
-      {t('queue.empty')}
-    </span>
-  </footer>
 );
 
 type MobileView = 'files' | 'editor' | 'mix';
@@ -93,7 +61,8 @@ export function Workspace() {
           <h2 id="output-title" class="panel-title">
             {t('output.title')}
           </h2>
-          <OutputSteps tabs={false} />
+          <Inspector tabs={false} />
+          <OutputFoot />
         </aside>
         <QueueBar />
       </div>
@@ -113,10 +82,12 @@ export function Workspace() {
           <h2 id="output-title" class="panel-title">
             {t('output.title')}
           </h2>
-          <OutputSteps tabs />
+          <Inspector tabs />
+          <OutputFoot />
         </section>
         <QueueBar />
         <Dialog open={filesOpen.value} onClose={() => (filesOpen.value = false)} title={t('files.title')} variant="drawer">
+          <QuickActions />
           <FilesHead />
           <FileList />
         </Dialog>
@@ -155,7 +126,8 @@ export function Workspace() {
         ))}
       </nav>
       <Dialog open={outputOpen.value} onClose={() => (outputOpen.value = false)} title={t('output.title')} variant="sheet">
-        <OutputSteps tabs />
+        <Inspector tabs />
+        <OutputFoot />
       </Dialog>
     </div>
   );

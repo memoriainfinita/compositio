@@ -75,6 +75,8 @@ export interface AddReport {
   added: number;
   paired: number;
   duplicates: number;
+  /** The files that came in, added or paired, in list order. */
+  ids: string[];
 }
 
 /**
@@ -134,7 +136,7 @@ export async function addIncoming(store: Store, files: Files, engine: Analyzer, 
       () => {},
     );
   }
-  return { added: added.length, paired: good.length - added.length, duplicates: sorted.duplicates.length };
+  return { added: added.length, paired: good.length - added.length, duplicates: sorted.duplicates.length, ids: good.map((g) => g.id) };
 }
 
 export const dismissAlert = (files: Files, id: string): void => {

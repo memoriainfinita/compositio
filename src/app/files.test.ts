@@ -54,7 +54,8 @@ describe('adding files', () => {
     const { store, files } = setup();
     const engine = fakeEngine();
     const r = await addIncoming(store, files, engine, batch(f('20.wav'), f('3.wav'), f('100.wav')));
-    expect(r).toEqual({ added: 3, paired: 0, duplicates: 0 });
+    expect(r).toMatchObject({ added: 3, paired: 0, duplicates: 0 });
+    expect(r.ids).toEqual(store.get().files.map((x) => x.id));
     expect(store.get().files.map((x) => [x.name, x.duration])).toEqual([
       ['3.wav', 3],
       ['20.wav', 20],
@@ -136,7 +137,7 @@ describe('adding files', () => {
     expect(files.selected.value.size).toBe(0);
 
     const r = await addIncoming(store, files, fakeEngine(), batch(f('Obertura.wav'), f('Nueva.wav')));
-    expect(r).toEqual({ added: 1, paired: 1, duplicates: 0 });
+    expect(r).toMatchObject({ added: 1, paired: 1, duplicates: 0 });
     expect(store.get().files.map((x) => x.id)[0]).toBe('x');
     expect(files.sources.value.get('x')?.name).toBe('Obertura.wav');
     expect(files.selected.value.has('x')).toBe(true);

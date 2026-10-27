@@ -36,7 +36,9 @@ Web estática en GitHub Pages, en PC y móvil, para preparar audio y vídeo de e
 - Paso 7 hecho (2026-10-27): editor en `src/ui/editor/`, diseño en `docs/paso-7-diseno-2026-10-27.md`. Onda propia en canvas (wavesurfer descartado por la CSP), picos por tramos de 10 min con ffmpeg (trabajo `peaks`, prioridad `view` de la cola), reproducción desde el archivo con copia de escucha Opus/AAC si el navegador no lo reproduce, imagen del vídeo sobre la onda, tiradores como sliders accesibles, zoom y vista general de aures, atajos, campos de tiempo y fundidos, A/B con Web Audio (medición de loudnorm en cola al usar B con normalizar)
 - Probe: un archivo sin duración en la cabecera se mide decodificando (WebM de MediaRecorder)
 - Decidido al implementar el paso 7, sin revisar por el usuario: Espacio reproduce también con el foco en un botón del editor; los fundidos solo se desactivan con «Extraer audio» en copiar; B usa la última medición del archivo mientras llega la nueva
-- e2e: 51 en Firefox (service worker 4, interfaz 9 + archivos 7 + editor 6 en cada tema, motor 3); axe sin infracciones WCAG 2.2 AA en las tres disposiciones y los dos temas. 214 pruebas unitarias (contando cada par de contraste del tema)
+- Paso 8 hecho (2026-10-27): salida, diseño en `docs/paso-8-diseno-2026-10-27.md`. Inspector con Lote / Este archivo y vuelta al lote por campo (`src/ui/output/`), avisos del plan en su paso, «Procesar N» con descarga directa, sueltos o zip (client-zip 2.5.1), cola en el pie con `PopCola` (cancelar, reintentar, descargar, zip de todo, limpiar), presets en IndexedDB con tres de partida, importar y exportar, acciones rápidas en archivos, móvil e Inicio (también al soltar archivos sobre una). Lógica en `src/app/output.ts` y `src/app/presets.ts`
+- Decidido al implementar el paso 8, sin revisar por el usuario: la marca de valor propio es el punto naranja de la lista de archivos (no acento); una acción rápida aplica el preset como lote y los ajustes propios del archivo encima; un lote va en zip si algún archivo lo pide; un trabajo reintentado no se descarga solo (botón en `PopCola`); el pie de «Salida» queda fijo abajo en escritorio; nombre del zip: el del montaje o `compositio.zip`
+- e2e: 67 en Firefox (service worker 4, interfaz 9 + archivos 7 + editor 6 + salida 8 en cada tema, motor 3); axe sin infracciones WCAG 2.2 AA en las tres disposiciones y los dos temas. 223 pruebas unitarias (contando cada par de contraste del tema)
 - e2e intermitentes (2026-10-27): «a restored session…» (archivos) y las de actualización del service worker fallaron por tiempo en la batería completa; solas pasan. En la primera, el motor tardó 35-80 s en quedar listo cuando axe analizaba la página justo tras recargar, con el núcleo ya en la caché del service worker: el guardado del service worker queda descartado. Sin axe, recargar a mitad de descarga da 2-5 s. Horas después, el mismo código pasó 3 de 3, el diagnóstico 5 de 5 sin atascos y la batería completa 51 de 51. Causa sin confirmar
 
 ## Patterns
@@ -58,6 +60,7 @@ Web estática en GitHub Pages, en PC y móvil, para preparar audio y vídeo de e
 - [e2e] `media.volume_scale` no silencia lo que sale por Web Audio: la prueba del editor pasa toda conexión a `AudioDestinationNode` por una ganancia cero (`addInitScript`). Confirmed 2026-10.
 - [webaudio] `createMediaElementSource` solo una vez por elemento: un elemento de medio nuevo por cada fuente (`key={src}`). Confirmed 2026-10.
 - [csp] wavesurfer.js 8 necesita nonce para su `<style>`: con `style-src 'self'` no sirve. Posiciones desde JS (`element.style`) sí están permitidas. Confirmed 2026-10.
+- [css] Un `select` en una rejilla `1fr` o en un flex ensancha su contenedor hasta su opción más larga: `grid-template-columns: minmax(0, 1fr)` y `flex: 1 1 0; min-width: 0`. Confirmed 2026-10.
 - [e2e] Una carpeta soltada no se puede construir desde la página: entradas con la forma de `webkitGetAsEntry` sobre un `DragEvent` con `dataTransfer` redefinido. Los File de prueba llevan `lastModified` fijo, o nunca son duplicados. Confirmed 2026-10.
 
 ## Preferences
@@ -69,7 +72,7 @@ Web estática en GitHub Pages, en PC y móvil, para preparar audio y vídeo de e
 ## TODO
 
 - [ ] Paso 1 en el Xiaomi (`spikes/` con `?run=all` por `adb reverse tcp:4173`)
-- [ ] Revisión de los pasos 6 y 7 por el usuario
+- [ ] Revisión de los pasos 6, 7 y 8 por el usuario
 - [ ] En móvil, «Nueva versión: recargar» tapa la barra inferior (visto 2026-10-27)
 - [ ] e2e intermitentes por tiempo en la batería completa (ver Status): repetir cuando vuelva a fallar y medir la carga del motor tras axe
-- [ ] Fase 1 según `docs/plan-2026-10-27.md`; siguiente: paso 8 (salida), sin diseño
+- [ ] Fase 1 según `docs/plan-2026-10-27.md`; siguiente: paso 9 (mezcla), sin diseño

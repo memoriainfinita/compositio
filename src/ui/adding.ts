@@ -11,8 +11,11 @@ import { announce } from './layout.ts';
 /** True while files are dragged over the window: the drop overlay shows. */
 export const dragging = signal(false);
 
-export async function takeIn(app: AppState, batch: readonly Incoming[]): Promise<void> {
-  if (!app.engine || batch.length === 0) return;
+/** Drops a target took for itself (a quick action): the window only ends the drag. */
+export const takenDrops = new WeakSet<Event>();
+
+export async function takeIn(app: AppState, batch: readonly Incoming[]): Promise<string[]> {
+  if (!app.engine || batch.length === 0) return [];
   const r = await addIncoming(app.store, app.files, app.engine, batch);
   const said = [
     r.added && t('files.added', { n: r.added }),
@@ -20,6 +23,7 @@ export async function takeIn(app: AppState, batch: readonly Incoming[]): Promise
     r.duplicates && t('files.duplicates', { n: r.duplicates }),
   ].filter(Boolean);
   if (said.length) announce(said.join('. '));
+  return r.ids;
 }
 
 /** The system's file picker, several at a time. The only way in on phones. */
@@ -47,7 +51,7 @@ const hasFiles = (e: DragEvent): boolean => [...(e.dataTransfer?.types ?? [])].i
  * Entries must be taken during the drop event itself: the list empties when it returns. Without
  * `webkitGetAsEntry`, the plain files (no folders).
  */
-function dropped(data: DataTransfer): Promise<Incoming[]> {
+export function dropped(data: DataTransfer): Promise<Incoming[]> {
   const entries = [...data.items].flatMap((item) => {
     const entry = item.kind === 'file' ? item.webkitGetAsEntry?.() : null;
     return entry ? [entry as unknown as EntryLike] : [];
@@ -82,6 +86,7 @@ export function useDropAnywhere(app: AppState): void {
       e.preventDefault();
       depth = 0;
       dragging.value = false;
+      if (takenDrops.has(e)) return;
       void dropped(e.dataTransfer).then((batch) => takeIn(app, batch));
     };
     window.addEventListener('dragenter', enter);

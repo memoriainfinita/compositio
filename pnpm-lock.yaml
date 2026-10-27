@@ -26,6 +26,9 @@ importers:
       '@preact/signals':
         specifier: 2.11.3
         version: 2.11.3(preact@11.0.1)
+      client-zip:
+        specifier: 2.5.1
+        version: 2.5.1
       preact:
         specifier: 11.0.1
         version: 11.0.1
@@ -422,6 +425,9 @@ packages:
   chai@6.3.0:
     resolution: {integrity: sha512-XWAtwJ6OHO+tj0EKCs0Y2UamnyOxseZWltU4x2U2wh8g4AigdjwvtUjvLP2tqkA/avxHEtzxNaqGq/YGNwckKg==}
     engines: {node: '>=18'}
+
+  client-zip@2.5.1:
+    resolution: {integrity: sha512-yOvNSBsQX1B7wtdvIVXJEIIShrlPiX+adhli7sWvQhsx3nX1DjvpSt+AwOxaX+3DCsT/Yx0nRy5hIjRLIYfebw==}
 
   cross-spawn@7.0.6:
     resolution: {integrity: sha512-uV2QOWP2nWzsy2aMp8aRibhi9dlzF5Hgh5SHaB9OiTGEyDTiJJyx0uy51QXdyWbtAHNua4XJzUKca3OzKUd3vA==}
@@ -1240,6 +1246,8 @@ snapshots:
       qified: 0.10.1
 
   chai@6.3.0: {}
+
+  client-zip@2.5.1: {}
 
   cross-spawn@7.0.6:
     dependencies:

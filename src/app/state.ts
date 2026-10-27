@@ -8,6 +8,7 @@ import type { Engine } from '../engine/index.ts';
 import type { Project } from '../model/project.ts';
 import type { Store } from '../model/store.ts';
 import { createFiles, type Files } from './files.ts';
+import { createPresetStore, type PresetStore } from './presets.ts';
 
 /** Bytes of the core downloaded so far; null before loading starts or when it is not tracked. */
 export type EngineLoad = { state: 'loading'; loaded: number; total: number } | { state: 'ready' } | { state: 'failed' } | null;
@@ -18,13 +19,14 @@ export interface AppState {
   canUndo: ReadonlySignal<boolean>;
   canRedo: ReadonlySignal<boolean>;
   files: Files;
+  presets: PresetStore;
   engine: Engine | null;
   engineLoad: Signal<EngineLoad>;
   /** Set when a new version waits; calling it applies the version. */
   update: Signal<(() => void) | null>;
 }
 
-export function createAppState(store: Store, engine: Engine | null = null): AppState {
+export function createAppState(store: Store, engine: Engine | null = null, presets: PresetStore = createPresetStore([], () => {})): AppState {
   const project = signal(store.get());
   const canUndo = signal(store.canUndo());
   const canRedo = signal(store.canRedo());
@@ -35,7 +37,7 @@ export function createAppState(store: Store, engine: Engine | null = null): AppS
     canUndo.value = store.canUndo();
     canRedo.value = store.canRedo();
   });
-  return { store, project, canUndo, canRedo, files, engine, engineLoad: signal(null), update: signal(null) };
+  return { store, project, canUndo, canRedo, files, presets, engine, engineLoad: signal(null), update: signal(null) };
 }
 
 export const AppContext = createContext<AppState | null>(null);
