@@ -46,10 +46,14 @@ async function boot() {
   // The engine loads while the person looks at the start screen (canvas «Inicio»).
   if (import.meta.env.PROD) {
     root.dataset.engine = 'loading';
-    engine.warmUp().then(
-      () => (root.dataset.engine = 'ready'),
+    engine.warmUp((loaded, total) => (app.engineLoad.value = { state: 'loading', loaded, total })).then(
+      () => {
+        root.dataset.engine = 'ready';
+        app.engineLoad.value = { state: 'ready' };
+      },
       (e) => {
         root.dataset.engine = 'failed';
+        app.engineLoad.value = { state: 'failed' };
         console.error('engine', e);
       },
     );

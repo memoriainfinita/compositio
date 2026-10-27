@@ -21,6 +21,9 @@
   --accent-weak: #1f2a2d;
   --accent-tint: rgb(90 200 216 / 0.16);
   --warn: #f0a64a;
+  --warn-bg: #241d14;
+  --warn-line: #5a4630;
+  --warn-text: #c9b28f;
   --wave: #4a525d;
   --focus: #b3e8f0;
   --backdrop: rgb(8 9 11 / 0.6);
@@ -52,6 +55,9 @@
     --accent-weak: #e3f1f3;
     --accent-tint: rgb(11 117 134 / 0.12);
     --warn: #b4610a;
+    --warn-bg: #fbf1e4;
+    --warn-line: #e2c194;
+    --warn-text: #74420f;
     --wave: #aab2bd;
     --focus: #075a67;
     --backdrop: rgb(21 24 28 / 0.4);

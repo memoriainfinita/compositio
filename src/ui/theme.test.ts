@@ -26,18 +26,20 @@ const contrast = (a: string, b: string): number => {
 
 const grounds = ['bg', 'bar', 'surface', 'inset'];
 // Text: 4.5:1. Accent as text also sits on its own weak tint (selected tabs).
+// The active file sits on the weak tint; alerts on their own ground.
 const text: [string, string[]][] = [
-  ['text', grounds],
+  ['text', [...grounds, 'accent-weak', 'warn-bg']],
   ['text-2', grounds],
-  ['muted', grounds],
+  ['muted', [...grounds, 'accent-weak']],
   ['accent', [...grounds, 'accent-weak']],
   ['on-accent', ['accent']],
+  ['warn-text', ['warn-bg']],
 ];
 // Non-text that people must see (field borders, focus ring, own-settings dot): 3:1.
 const shapes: [string, string[]][] = [
   ['field-line', grounds],
   ['focus', grounds],
-  ['warn', grounds],
+  ['warn', [...grounds, 'warn-bg']],
   ['accent', grounds],
 ];
 

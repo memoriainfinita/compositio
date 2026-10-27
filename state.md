@@ -30,7 +30,10 @@ Web estática en GitHub Pages, en PC y móvil, para preparar audio y vídeo de e
 - Paso 5 hecho (2026-10-27): armazón de la interfaz con Preact 11.0.1 + @preact/signals 2.11.3 (JSX compilado por Vite, sin Babel). Tema oscuro y claro según el sistema con los colores del lienzo (contraste comprobado por prueba; bordes de campo más claros que en el lienzo para llegar a 3:1); español e inglés propios; disposiciones escritorio (≥1200), tableta (768–1199) y móvil; pestañas WAI-ARIA, `<dialog>` nativo, enlace para saltar, región `aria-live`, deshacer con Ctrl+Z; Inter y JetBrains Mono de @fontsource-variable 5.3.0; logo y favicon SVG. Inicio con proyecto vacío; botones de Inicio deshabilitados hasta el paso 6
 - Arranque: lee ajustes y sesión de IndexedDB, autoguardado del proyecto (nunca sobre una sesión que no sabe leer) y carga del motor en segundo plano en producción (`data-engine` en `<html>`)
 - CSP estricta: `<meta>` en la build y cabecera con `frame-ancestors 'none'` desde el service worker (`build/csp.ts`); sin `data:` (`assetsInlineLimit: 0`). Comprobada sin violaciones con el motor cargado
-- e2e: 25 en Firefox (service worker 4, interfaz 9 en oscuro y 9 en claro, motor 3); axe sin infracciones WCAG 2.2 AA en las tres disposiciones y los dos temas
+- Paso 6 hecho (2026-10-27): archivos. Lógica pura en `src/app/intake.ts` (filtro por MIME o extensión, orden natural por ruta, duplicados por nombre, tamaño y fecha y, dentro de una tanda, también ruta; límite 2 GiB; emparejamiento; recorrido de carpetas) y sesión en `src/app/files.ts` (File, info, silencios, selección, activo, avisos; nada se guarda ni se deshace). La tanda entra entera tras el probe, en un paso de deshacer; silencios después en la cola de fondo. Soltar en toda la ventana con resaltado, «Elegir archivos», lista con casillas, «N de M», todos/ninguno, «Quitar» deshacible, archivos que faltan atenuados y emparejados al soltarlos, línea técnica en el editor, avisos de 2 GB, no audio y un solo hilo. Inicio con carga del motor en MB
+- Decidido al implementar el paso 6, sin revisar por el usuario: los archivos nuevos y los emparejados entran seleccionados; el primero de la primera tanda pasa a activo; el aviso «Modo de un solo hilo» se puede cerrar (en el lienzo no tiene botón); el pie de la columna es un botón que abre el selector; la fila muestra la duración del probe y, si falta el archivo, la guardada
+- Service worker: el núcleo de ffmpeg se sirve mientras se guarda en caché (`waitUntil`), y una segunda petición espera a que acabe de guardarse
+- e2e: 39 en Firefox (service worker 4, interfaz 9 + archivos 7 en cada tema, motor 3); axe sin infracciones WCAG 2.2 AA en las tres disposiciones y los dos temas. 193 pruebas unitarias (contando cada par de contraste del tema)
 
 ## Patterns
 
@@ -48,6 +51,7 @@ Web estática en GitHub Pages, en PC y móvil, para preparar audio y vídeo de e
 - [ffmpeg.wasm] El nivel de registro es global a la instancia (un `-v error` previo oculta loudnorm, silencedetect y progreso): cada orden fija `-loglevel`. Confirmed 2026-10.
 - [ffmpeg.wasm] Tras un `exec` fallido la instancia queda rota (`Aborted()`): se desecha y se carga otra. Confirmed 2026-10.
 - [ffmpeg.wasm] loudnorm seguido de aresample no negocia la distribución de canales en 5.1.4: añadir `aformat=channel_layouts=...`. Confirmed 2026-10.
+- [e2e] Una carpeta soltada no se puede construir desde la página: entradas con la forma de `webkitGetAsEntry` sobre un `DragEvent` con `dataTransfer` redefinido. Los File de prueba llevan `lastModified` fijo, o nunca son duplicados. Confirmed 2026-10.
 
 ## Preferences
 
@@ -58,4 +62,5 @@ Web estática en GitHub Pages, en PC y móvil, para preparar audio y vídeo de e
 ## TODO
 
 - [ ] Paso 1 en el Xiaomi (`spikes/` con `?run=all` por `adb reverse tcp:4173`)
-- [ ] Fase 1 según `docs/plan-2026-10-27.md`; siguiente: paso 6 (archivos), diseño aprobado en `docs/paso-6-diseno-2026-10-27.md`, sin empezar
+- [ ] Revisión del paso 6 por el usuario
+- [ ] Fase 1 según `docs/plan-2026-10-27.md`; siguiente: paso 7 (editor), sin diseño

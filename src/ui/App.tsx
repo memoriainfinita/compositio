@@ -1,6 +1,7 @@
 import { useEffect } from 'preact/hooks';
 import { AppContext, useApp, type AppState } from '../app/state.ts';
 import { t } from '../i18n/index.ts';
+import { dragging, useDropAnywhere } from './adding.ts';
 import { Home } from './Home.tsx';
 import { announcement } from './layout.ts';
 import { Workspace } from './Workspace.tsx';
@@ -26,8 +27,10 @@ function useUndoKeys() {
 }
 
 function Shell() {
-  const { project, update } = useApp();
+  const app = useApp();
+  const { project, update } = app;
   useUndoKeys();
+  useDropAnywhere(app);
   const apply = update.value;
   return (
     <>
@@ -35,6 +38,11 @@ function Shell() {
         {t('app.skip')}
       </a>
       {project.value.files.length === 0 ? <Home /> : <Workspace />}
+      {dragging.value && (
+        <div class="drop-overlay" aria-hidden="true">
+          <span>{t('home.drop')}</span>
+        </div>
+      )}
       {apply && (
         <div class="update-banner" role="status">
           <button type="button" class="button primary" onClick={apply}>

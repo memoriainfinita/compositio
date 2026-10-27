@@ -12,14 +12,15 @@ import { coreUrls, WasmRunner } from './wasm-runner.ts';
 import { createWakeLock, type WakeLock, type WakeState } from './wakelock.ts';
 
 declare const __FFMPEG_CORE__: string;
+declare const __FFMPEG_WASM_BYTES__: number;
 
 export interface Engine {
   queue: Queue;
   wakeLock: WakeLock;
   /** Whether this browser could run the multithread core (for video, and for the warning). */
   multithread: boolean;
-  /** Loads the engine ahead of the first job. */
-  warmUp(): Promise<void>;
+  /** Loads the engine ahead of the first job; `onBytes` follows the core's download. */
+  warmUp(onBytes?: (loaded: number, total: number) => void): Promise<void>;
   probe(file: File): Promise<MediaInfo>;
   silences(file: File, info: MediaInfo, track?: number): Promise<Silences>;
   process(label: string, file: File, input: Omit<PlanInput, 'inputPath' | 'outputPath'>): { id: string; result: Promise<Processed> };
@@ -27,7 +28,7 @@ export interface Engine {
 }
 
 export function createEngine(
-  runner: Runner = new WasmRunner(coreUrls(__FFMPEG_CORE__)),
+  runner: Runner = new WasmRunner(coreUrls(__FFMPEG_CORE__, document.baseURI, __FFMPEG_WASM_BYTES__)),
   onWakeChange?: (state: WakeState) => void,
 ): Engine {
   const wakeLock = createWakeLock(undefined, onWakeChange);
@@ -36,7 +37,7 @@ export function createEngine(
     queue,
     wakeLock,
     multithread: self.crossOriginIsolated === true && typeof SharedArrayBuffer === 'function',
-    warmUp: async () => runner.load?.(),
+    warmUp: async (onBytes) => runner.load?.(onBytes),
     probe: (file) => queue.add(file.name, (o) => probeFile(runner, file, o), 'background').result,
     silences: (file, info, track) => queue.add(file.name, (o) => detectSilences(runner, file, info, track, o), 'background').result,
     process: (label, file, input) => queue.add(label, (o) => processFile(runner, file, input, o)),

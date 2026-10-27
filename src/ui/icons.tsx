@@ -53,6 +53,20 @@ export const SlidersIcon = () => (
   </Svg>
 );
 
+export const WarnIcon = () => (
+  <Svg>
+    <circle cx="12" cy="12" r="9.5" />
+    <path d="M12 7 v6 M12 16.5 v0.3" />
+  </Svg>
+);
+
+export const InfoIcon = () => (
+  <Svg>
+    <circle cx="12" cy="12" r="9.5" />
+    <path d="M12 10.5 v6.5 M12 7.2 v0.3" />
+  </Svg>
+);
+
 export const CloseIcon = () => (
   <Svg>
     <path d="M6 6 L18 18 M18 6 L6 18" />

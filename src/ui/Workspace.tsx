@@ -7,55 +7,48 @@ import { useApp } from '../app/state.ts';
 import { t, type Key } from '../i18n/index.ts';
 import { STEPS, type Step } from '../model/settings.ts';
 import { Dialog } from './Dialog.tsx';
+import { FileList, FilesHead } from './Files.tsx';
+import { techLine } from './format.ts';
 import { Header } from './Header.tsx';
 import { ListIcon, MixIcon, SlidersIcon, WaveIcon } from './icons.tsx';
 import { layout } from './layout.ts';
+import { Alerts } from './Notices.tsx';
+import { STEP_LABEL } from './steps.ts';
 import { Tabs } from './Tabs.tsx';
 
-const STEP_LABEL: Record<Step, Key> = {
-  extract: 'output.extract',
-  trim: 'output.trim',
-  normalize: 'output.normalize',
-  convert: 'output.convert',
-  output: 'output.output',
-};
-
-function FileList() {
-  const { project } = useApp();
-  return (
-    <ul class="file-list">
-      {project.value.files.map((f) => (
-        <li key={f.id} class="file-item">
-          {f.name}
-        </li>
-      ))}
-    </ul>
-  );
-}
-
-function FilesPanel() {
-  const { project } = useApp();
+function FilesPanel({ onActivate }: { onActivate?: () => void }) {
   return (
     <section class="panel files" aria-labelledby="files-title">
-      <div class="panel-head">
-        <h2 id="files-title" class="panel-title">
-          {t('files.title')}
-        </h2>
-        <span class="muted small">{t('files.count', { n: project.value.files.length })}</span>
-      </div>
-      <FileList />
+      <h2 id="files-title" class="panel-title">
+        {t('files.title')}
+      </h2>
+      <FilesHead />
+      <FileList onActivate={onActivate} />
     </section>
   );
 }
 
-const EditorPanel = () => (
-  <section class="card editor" aria-labelledby="editor-title">
-    <h2 id="editor-title" class="panel-title">
-      {t('editor.title')}
-    </h2>
-    <p class="empty">{t('editor.empty')}</p>
-  </section>
-);
+/** The active file's name and technical line; its waveform arrives in step 7. */
+function EditorPanel() {
+  const { project, files } = useApp();
+  const file = project.value.files.find((f) => f.id === files.active.value);
+  const info = file && files.infos.value.get(file.id);
+  return (
+    <section class="card editor" aria-labelledby="editor-title">
+      <h2 id="editor-title" class="panel-title">
+        {t('editor.title')}
+      </h2>
+      {file ? (
+        <div class="editor-file">
+          <span class="strong">{file.name}</span>
+          <span class="muted small mono">{info ? techLine(file.name, info) : files.sources.value.has(file.id) ? '' : t('files.missing')}</span>
+        </div>
+      ) : (
+        <p class="empty">{t('editor.empty')}</p>
+      )}
+    </section>
+  );
+}
 
 const MixPanel = () => (
   <section class="card mix" aria-labelledby="mix-title">
@@ -115,6 +108,7 @@ export function Workspace() {
           <FilesPanel />
         </aside>
         <main id="main" tabIndex={-1} class="center">
+          <Alerts />
           <EditorPanel />
           <MixPanel />
         </main>
@@ -134,6 +128,7 @@ export function Workspace() {
       <div class="workspace tablet">
         <Header onFiles={() => (filesOpen.value = true)} />
         <main id="main" tabIndex={-1} class="center">
+          <Alerts />
           <EditorPanel />
           <MixPanel />
         </main>
@@ -145,6 +140,7 @@ export function Workspace() {
         </section>
         <QueueBar />
         <Dialog open={filesOpen.value} onClose={() => (filesOpen.value = false)} title={t('files.title')} variant="drawer">
+          <FilesHead />
           <FileList />
         </Dialog>
       </div>
@@ -160,7 +156,8 @@ export function Workspace() {
     <div class="workspace mobile">
       <Header />
       <main id="main" tabIndex={-1} class="center">
-        {view.value === 'files' && <FilesPanel />}
+        <Alerts />
+        {view.value === 'files' && <FilesPanel onActivate={() => (view.value = 'editor')} />}
         {view.value === 'editor' && (
           <>
             <EditorPanel />

@@ -2,19 +2,23 @@
 // instance runs one command at a time; cancelling terminates it and the next command loads a new one.
 
 import { FFmpeg } from '@ffmpeg/ffmpeg';
+import { download, type OnBytes } from './download.ts';
 import { classify, EngineError, inputPath, outputPath, progressTracker, type RunOptions, type RunRequest, type RunResult, type Runner } from './runner.ts';
 
 export interface CoreUrls {
   coreURL: string;
   wasmURL: string;
   workerURL?: string;
+  /** Size of the .wasm file, to show the download in bytes. */
+  wasmBytes?: number;
 }
 
 /** URLs of a core copied under the site, absolute: the library's Worker resolves them. */
-export function coreUrls(dir: string, base: string = document.baseURI): CoreUrls {
+export function coreUrls(dir: string, base: string = document.baseURI, wasmBytes?: number): CoreUrls {
   const url = (file: string) => new URL(`${dir}${file}`, base).href;
   const urls: CoreUrls = { coreURL: url('ffmpeg-core.js'), wasmURL: url('ffmpeg-core.wasm') };
   if (dir.includes('core-mt')) urls.workerURL = url('ffmpeg-core.worker.js');
+  if (wasmBytes) urls.wasmBytes = wasmBytes;
   return urls;
 }
 
@@ -40,7 +44,8 @@ export class WasmRunner implements Runner {
       const ff = new FFmpeg();
       ff.on('log', ({ message }) => this.#onLine(message));
       try {
-        await ff.load(this.urls);
+        const { wasmBytes: _bytes, ...urls } = this.urls;
+        await ff.load(urls);
       } catch (e) {
         ff.terminate();
         this.#loading = null;
@@ -128,7 +133,14 @@ export class WasmRunner implements Runner {
     }
   }
 
-  async load(): Promise<void> {
+  async load(onBytes?: OnBytes): Promise<void> {
+    if (onBytes && this.urls.wasmBytes && !this.#loading) {
+      try {
+        await download(this.urls.wasmURL, this.urls.wasmBytes, onBytes);
+      } catch (e) {
+        throw new EngineError('load-failed', String((e as Error)?.message ?? e));
+      }
+    }
     await this.#instance();
   }
 

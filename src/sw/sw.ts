@@ -41,10 +41,13 @@ self.addEventListener('fetch', (event) => {
   if (route === 'ignore') return;
   // The page gets its policy as a header too: only a header can forbid framing it.
   const extra: Record<string, string> = route === 'navigation' ? { 'Content-Security-Policy': __CSP__ } : {};
-  event.respondWith(respond(event.request, route).then((r) => withIsolation(r, extra)));
+  event.respondWith(respond(event.request, route, (p) => event.waitUntil(p)).then((r) => withIsolation(r, extra)));
 });
 
-async function respond(request: Request, route: string): Promise<Response> {
+/** Cores being stored: a second request for one waits for it instead of downloading it again. */
+const storing = new Map<string, Promise<void>>();
+
+async function respond(request: Request, route: string, later: (p: Promise<unknown>) => void): Promise<Response> {
   if (route === 'navigation') {
     const cached = await caches.match(scopeUrl('index.html'), { cacheName: SHELL });
     return cached ?? fetch(request);
@@ -54,10 +57,17 @@ async function respond(request: Request, route: string): Promise<Response> {
   }
   if (route === 'ffmpeg') {
     const cache = await caches.open(FFMPEG);
+    await storing.get(request.url)?.catch(() => {});
     const cached = await cache.match(request);
     if (cached) return cached;
     const response = await fetch(request);
-    if (response.ok) await cache.put(request, response.clone());
+    if (response.ok) {
+      // The page reads the body as it arrives (the start screen counts its bytes); the copy is
+      // stored meanwhile.
+      const stored = cache.put(request, response.clone()).finally(() => storing.delete(request.url));
+      storing.set(request.url, stored);
+      later(stored);
+    }
     return response;
   }
   return fetch(request);

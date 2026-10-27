@@ -1,4 +1,4 @@
-import { readFileSync } from 'node:fs';
+import { readFileSync, statSync } from 'node:fs';
 import { defineConfig } from 'vitest/config';
 import { contentSecurityPolicy } from './build/csp.ts';
 import { serviceWorker } from './build/sw-plugin.ts';
@@ -17,7 +17,11 @@ export default defineConfig({
   base: './',
   plugins: [contentSecurityPolicy(), serviceWorker()],
   oxc: { jsx: { runtime: 'automatic', importSource: 'preact' } },
-  define: { __FFMPEG_CORE__: JSON.stringify(`ffmpeg/core-${coreVersion}/`) },
+  define: {
+    __FFMPEG_CORE__: JSON.stringify(`ffmpeg/core-${coreVersion}/`),
+    // The start screen shows the core's download in bytes against this.
+    __FFMPEG_WASM_BYTES__: JSON.stringify(statSync('node_modules/@ffmpeg/core/dist/esm/ffmpeg-core.wasm').size),
+  },
   server: { headers: isolation },
   // @ffmpeg/ffmpeg starts its Worker from a URL relative to its own module; prebundling breaks it.
   optimizeDeps: { exclude: ['@ffmpeg/ffmpeg'] },

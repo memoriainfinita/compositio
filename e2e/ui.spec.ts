@@ -94,7 +94,7 @@ test.describe('desktop workspace', () => {
     await openWorkspace(page);
     await expect(page.getByRole('heading', { level: 1, name: 'compositio' })).toBeVisible();
     await expect(page.getByText('Ensayo')).toBeVisible();
-    await expect(page.getByRole('complementary', { name: 'Archivos' }).getByRole('listitem')).toHaveText(['01 - Obertura.wav', '02 - Entrada.mp3']);
+    await expect(page.getByRole('complementary', { name: 'Archivos' }).locator('.file-title')).toHaveText(['01 - Obertura.wav', '02 - Entrada.mp3']);
     await expect(page.getByRole('heading', { name: 'Editor' })).toBeVisible();
     await expect(page.getByRole('heading', { name: 'Mezcla' })).toBeVisible();
     await expect(page.getByRole('complementary', { name: 'Salida' }).getByRole('heading', { level: 3 })).toHaveText([
