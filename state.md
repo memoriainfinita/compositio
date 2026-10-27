@@ -58,4 +58,4 @@ Web estática en GitHub Pages, en PC y móvil, para preparar audio y vídeo de e
 ## TODO
 
 - [ ] Paso 1 en el Xiaomi (`spikes/` con `?run=all` por `adb reverse tcp:4173`)
-- [ ] Fase 1 según `docs/plan-2026-10-27.md`; siguiente: paso 6 (archivos). Incluye la carga del motor con progreso en Inicio
+- [ ] Fase 1 según `docs/plan-2026-10-27.md`; siguiente: paso 6 (archivos), diseño aprobado en `docs/paso-6-diseno-2026-10-27.md`, sin empezar
