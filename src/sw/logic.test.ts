@@ -44,4 +44,10 @@ describe('withIsolation', () => {
     expect(res.headers.get('Content-Type')).toBe('text/plain');
     for (const [name, value] of Object.entries(ISOLATION_HEADERS)) expect(res.headers.get(name)).toBe(value);
   });
+
+  it('adds extra headers to one response only', () => {
+    const res = withIsolation(new Response('page'), { 'Content-Security-Policy': "default-src 'self'" });
+    expect(res.headers.get('Content-Security-Policy')).toBe("default-src 'self'");
+    expect(withIsolation(new Response('other')).headers.get('Content-Security-Policy')).toBeNull();
+  });
 });

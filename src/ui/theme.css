@@ -1,0 +1,128 @@
+/* Colours of the design canvas («Diseño»: Definitivo and Claro). The theme follows the system.
+   src/ui/theme.test.ts checks the contrast of every pair the interface uses. */
+
+:root {
+  color-scheme: dark;
+  --bg: #121417;
+  --bar: #16191d;
+  --surface: #1b1e23;
+  --inset: #15181c;
+  --line: #262a31;
+  --control: #2f343c;
+  --dash: #3a404a;
+  /* Borders that identify a field need 3:1 against their background. */
+  --field-line: #6f7782;
+  --text: #e6e8eb;
+  --text-2: #c3c8cf;
+  --muted: #9aa1ab;
+  --disabled: #5b626c;
+  --accent: #5ac8d8;
+  --on-accent: #0d1416;
+  --accent-weak: #1f2a2d;
+  --accent-tint: rgb(90 200 216 / 0.16);
+  --warn: #f0a64a;
+  --wave: #4a525d;
+  --focus: #b3e8f0;
+  --backdrop: rgb(8 9 11 / 0.6);
+
+  --font: 'Inter Variable', Inter, system-ui, sans-serif;
+  --mono: 'JetBrains Mono Variable', 'JetBrains Mono', ui-monospace, monospace;
+  --radius: 8px;
+  --radius-lg: 10px;
+  --touch: 44px;
+}
+
+@media (prefers-color-scheme: light) {
+  :root {
+    color-scheme: light;
+    --bg: #f4f5f7;
+    --bar: #fafbfc;
+    --surface: #ffffff;
+    --inset: #f4f5f7;
+    --line: #dfe2e7;
+    --control: #cdd2d9;
+    --dash: #b9c0c9;
+    --field-line: #858d98;
+    --text: #15181c;
+    --text-2: #2d333b;
+    --muted: #5b636e;
+    --disabled: #a3abb5;
+    --accent: #0b7586;
+    --on-accent: #ffffff;
+    --accent-weak: #e3f1f3;
+    --accent-tint: rgb(11 117 134 / 0.12);
+    --warn: #b4610a;
+    --wave: #aab2bd;
+    --focus: #075a67;
+    --backdrop: rgb(21 24 28 / 0.4);
+  }
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  height: 100%;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font);
+  font-size: 15px;
+  line-height: 1.4;
+  -webkit-font-smoothing: antialiased;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+  color: inherit;
+}
+
+button {
+  cursor: pointer;
+}
+
+button:disabled {
+  cursor: default;
+}
+
+:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
+.mono {
+  font-family: var(--mono);
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

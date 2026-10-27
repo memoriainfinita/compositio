@@ -18,6 +18,8 @@ export interface Engine {
   wakeLock: WakeLock;
   /** Whether this browser could run the multithread core (for video, and for the warning). */
   multithread: boolean;
+  /** Loads the engine ahead of the first job. */
+  warmUp(): Promise<void>;
   probe(file: File): Promise<MediaInfo>;
   silences(file: File, info: MediaInfo, track?: number): Promise<Silences>;
   process(label: string, file: File, input: Omit<PlanInput, 'inputPath' | 'outputPath'>): { id: string; result: Promise<Processed> };
@@ -34,6 +36,7 @@ export function createEngine(
     queue,
     wakeLock,
     multithread: self.crossOriginIsolated === true && typeof SharedArrayBuffer === 'function',
+    warmUp: async () => runner.load?.(),
     probe: (file) => queue.add(file.name, (o) => probeFile(runner, file, o), 'background').result,
     silences: (file, info, track) => queue.add(file.name, (o) => detectSilences(runner, file, info, track, o), 'background').result,
     process: (label, file, input) => queue.add(label, (o) => processFile(runner, file, input, o)),

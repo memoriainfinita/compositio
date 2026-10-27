@@ -4,6 +4,7 @@ import { createHash } from 'node:crypto';
 import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { join, relative, resolve } from 'node:path';
 import { build, type Plugin, type ResolvedConfig } from 'vite';
+import { CSP_HEADER } from './csp.ts';
 
 function listFiles(dir: string): string[] {
   return readdirSync(dir).flatMap((name) => {
@@ -39,6 +40,7 @@ export function serviceWorker(): Plugin {
           __PRECACHE__: JSON.stringify(files),
           __VERSION__: JSON.stringify(hash.digest('hex').slice(0, 12)),
           __FFMPEG_CORES__: JSON.stringify(cores),
+          __CSP__: JSON.stringify(CSP_HEADER),
         },
         build: {
           outDir,

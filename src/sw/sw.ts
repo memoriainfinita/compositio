@@ -7,6 +7,7 @@ declare const self: ServiceWorkerGlobalScope;
 declare const __PRECACHE__: string[];
 declare const __VERSION__: string;
 declare const __FFMPEG_CORES__: string;
+declare const __CSP__: string;
 
 const SHELL = shellCacheName(__VERSION__);
 const FFMPEG = ffmpegCacheName(__FFMPEG_CORES__);
@@ -38,7 +39,9 @@ self.addEventListener('message', (event) => {
 self.addEventListener('fetch', (event) => {
   const route = routeFor(event.request, self.registration.scope, precache);
   if (route === 'ignore') return;
-  event.respondWith(respond(event.request, route).then(withIsolation));
+  // The page gets its policy as a header too: only a header can forbid framing it.
+  const extra: Record<string, string> = route === 'navigation' ? { 'Content-Security-Policy': __CSP__ } : {};
+  event.respondWith(respond(event.request, route).then((r) => withIsolation(r, extra)));
 });
 
 async function respond(request: Request, route: string): Promise<Response> {

@@ -128,6 +128,10 @@ export class WasmRunner implements Runner {
     }
   }
 
+  async load(): Promise<void> {
+    await this.#instance();
+  }
+
   dispose(): void {
     this.#discard();
   }

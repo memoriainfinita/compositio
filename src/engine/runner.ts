@@ -25,6 +25,8 @@ export interface RunOptions {
 
 export interface Runner {
   run(request: RunRequest, options?: RunOptions): Promise<RunResult>;
+  /** Gets ready before the first run, when loading takes a while. */
+  load?(): Promise<void>;
   dispose(): void;
 }
 

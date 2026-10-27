@@ -27,8 +27,10 @@ Web estática en GitHub Pages, en PC y móvil, para preparar audio y vídeo de e
 - Paso 3 hecho (2026-10-27): modelo en `src/model/` sin interfaz. Medio por pistas, ediciones del archivo, línea de tiempo con transición por clip, operaciones declarativas que construyen la orden de ffmpeg (medir y aplicar al normalizar), nombres de salida, formatos con versión y migraciones (valibot 1.5.0), proyecto inmutable con deshacer de 200 pasos y gestos agrupados, IndexedDB con autoguardado. 58 pruebas unitarias del modelo (63 en total). Las órdenes generadas pasan por ffmpeg 8.1.1 nativo con tonos (script fuera del repo); sin probar aún en ffmpeg.wasm 5.1.4
 - Silencios detectados, información del medio y selección viven en la sesión: ni se guardan ni se deshacen
 - Paso 4 hecho (2026-10-27): motor en `src/engine/`. Ejecutor sobre ffmpeg.wasm (@ffmpeg/ffmpeg 0.12.15, núcleo de un hilo) con entradas WORKERFS, progreso por `time=`, cancelación y errores clasificados; trabajos de probe (ffprobe JSON), silencios y proceso de un plan; cola de uno en uno con prioridad del usuario; Wake Lock mientras trabaja. 90 pruebas unitarias en total; 3 e2e del motor en Firefox sobre el servidor de desarrollo, con los 11 casos de formato pasando por ffmpeg.wasm 5.1.4
-- El motor aún no está en el bundle de producción (la interfaz llega en el paso 5): el Worker de @ffmpeg/ffmpeg construido por Vite solo se ha probado en `spikes/`
-- Interfaz: solo un marcador de posición y el aviso de versión nueva, hasta el paso 5
+- Paso 5 hecho (2026-10-27): armazón de la interfaz con Preact 11.0.1 + @preact/signals 2.11.3 (JSX compilado por Vite, sin Babel). Tema oscuro y claro según el sistema con los colores del lienzo (contraste comprobado por prueba; bordes de campo más claros que en el lienzo para llegar a 3:1); español e inglés propios; disposiciones escritorio (≥1200), tableta (768–1199) y móvil; pestañas WAI-ARIA, `<dialog>` nativo, enlace para saltar, región `aria-live`, deshacer con Ctrl+Z; Inter y JetBrains Mono de @fontsource-variable 5.3.0; logo y favicon SVG. Inicio con proyecto vacío; botones de Inicio deshabilitados hasta el paso 6
+- Arranque: lee ajustes y sesión de IndexedDB, autoguardado del proyecto (nunca sobre una sesión que no sabe leer) y carga del motor en segundo plano en producción (`data-engine` en `<html>`)
+- CSP estricta: `<meta>` en la build y cabecera con `frame-ancestors 'none'` desde el service worker (`build/csp.ts`); sin `data:` (`assetsInlineLimit: 0`). Comprobada sin violaciones con el motor cargado
+- e2e: 25 en Firefox (service worker 4, interfaz 9 en oscuro y 9 en claro, motor 3); axe sin infracciones WCAG 2.2 AA en las tres disposiciones y los dos temas
 
 ## Patterns
 
@@ -41,6 +43,7 @@ Web estática en GitHub Pages, en PC y móvil, para preparar audio y vídeo de e
 - [e2e] Playwright no intercepta `sw.js` en Firefox: las pruebas de actualización sirven `dist` con su propio servidor. Esperar el aislamiento con `waitForFunction`, que sobrevive a la recarga. Confirmed 2026-10.
 - [sw] Cachés con prefijo `compositio-`: en github.io comparten CacheStorage con otras apps del mismo origen. Confirmed 2026-10.
 - [ci] Playwright en CI: `playwright install firefox` sin `--with-deps`; con apt, el mirror de Azure tardó más de 12 min en Ubuntu 26 y la imagen ya trae las librerías de Firefox. Trabajos con `timeout-minutes`. Confirmed 2026-10.
+- [e2e] La emulación `colorScheme` de Playwright no llega a Firefox 155: forzar el tema con la preferencia `layout.css.prefers-color-scheme.content-override` (0 oscuro, 1 claro) en `launchOptions`. Confirmed 2026-10.
 - [ffmpeg.wasm] ffprobe sale con -1 aunque funcione: se juzga por su salida JSON. Confirmed 2026-10.
 - [ffmpeg.wasm] El nivel de registro es global a la instancia (un `-v error` previo oculta loudnorm, silencedetect y progreso): cada orden fija `-loglevel`. Confirmed 2026-10.
 - [ffmpeg.wasm] Tras un `exec` fallido la instancia queda rota (`Aborted()`): se desecha y se carga otra. Confirmed 2026-10.
@@ -55,4 +58,4 @@ Web estática en GitHub Pages, en PC y móvil, para preparar audio y vídeo de e
 ## TODO
 
 - [ ] Paso 1 en el Xiaomi (`spikes/` con `?run=all` por `adb reverse tcp:4173`)
-- [ ] Fase 1 según `docs/plan-2026-10-27.md`; siguiente: paso 5 (armazón de la interfaz). La CSP debe permitir `'wasm-unsafe-eval'`
+- [ ] Fase 1 según `docs/plan-2026-10-27.md`; siguiente: paso 6 (archivos). Incluye la carga del motor con progreso en Inicio

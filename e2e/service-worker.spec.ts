@@ -31,7 +31,7 @@ test('works offline after the first visit, ffmpeg core included once fetched', a
 
   await context.setOffline(true);
   await page.reload();
-  await expect(page.locator('h1')).toHaveText('compositio');
+  await page.waitForFunction(() => document.documentElement.dataset.app === 'ready');
   expect(await page.evaluate(() => self.crossOriginIsolated)).toBe(true);
   const offlineCore = await page.evaluate(async () => (await fetch('./ffmpeg/core-0.12.10/ffmpeg-core.wasm')).ok);
   expect(offlineCore).toBe(true);
@@ -44,12 +44,15 @@ test.describe('updates', () => {
   const types: Record<string, string> = { '.html': 'text/html', '.js': 'text/javascript', '.wasm': 'application/wasm' };
   let server: Server;
   let swSuffix = '';
+  // A deploy replaces the hashed assets: the old ones are gone from the server.
+  let oldAssetsGone = false;
   const port = 4175;
 
   test.beforeAll(async () => {
     server = createServer(async (req, res) => {
       const path = normalize(decodeURIComponent(new URL(req.url ?? '/', 'http://x').pathname)).replace(/^[\\/]+/, '') || 'index.html';
       try {
+        if (oldAssetsGone && path.startsWith('assets')) throw new Error('gone');
         let body: Buffer | string = await readFile(join('dist', path));
         if (path === 'sw.js') body = `${body}\n${swSuffix}`;
         res.writeHead(200, { 'Content-Type': types[extname(path)] ?? 'application/octet-stream', 'Cache-Control': 'no-cache' });
@@ -63,18 +66,37 @@ test.describe('updates', () => {
 
   test.afterAll(() => new Promise<void>((resolve) => server.close(() => resolve())));
 
+  const banner = (page: Page) => page.getByRole('button', { name: 'Nueva versión: recargar' });
+
+  test.afterEach(() => {
+    swSuffix = '';
+    oldAssetsGone = false;
+  });
+
   test('a new version waits until the user accepts it', async ({ page }) => {
     await isolatedPage(page, `http://127.0.0.1:${port}/`);
     swSuffix = '// next version';
     await page.evaluate(() => navigator.serviceWorker.ready.then((r) => r.update()));
 
-    await expect(page.locator('#update')).toBeVisible({ timeout: 15000 });
+    await expect(banner(page)).toBeVisible({ timeout: 15000 });
     // Nothing changes until the click: the old worker still controls the page.
     expect(await page.evaluate(() => navigator.serviceWorker.getRegistration().then((r) => !!r?.waiting))).toBe(true);
 
-    await Promise.all([page.waitForEvent('load'), page.locator('#update-apply').click()]);
+    await Promise.all([page.waitForEvent('load'), banner(page).click()]);
     await expect.poll(() => page.evaluate(() => self.crossOriginIsolated)).toBe(true);
-    await expect(page.locator('#update')).toBeHidden();
+    await expect(banner(page)).toBeHidden();
     expect(await page.evaluate(() => navigator.serviceWorker.getRegistration().then((r) => !!r?.waiting))).toBe(false);
+  });
+
+  test('reloading without accepting keeps the old version working from its cache', async ({ page }) => {
+    await isolatedPage(page, `http://127.0.0.1:${port}/`);
+    swSuffix = '// next version';
+    await page.evaluate(() => navigator.serviceWorker.ready.then((r) => r.update()));
+    await expect(banner(page)).toBeVisible({ timeout: 15000 });
+
+    oldAssetsGone = true;
+    await page.reload();
+    await page.waitForFunction(() => document.documentElement.dataset.app === 'ready', null, { timeout: 10000 });
+    await expect(banner(page)).toBeVisible();
   });
 });

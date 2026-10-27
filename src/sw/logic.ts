@@ -24,11 +24,12 @@ export function cachesToDelete(existing: readonly string[], keep: readonly strin
   return existing.filter((name) => name.startsWith(CACHE_PREFIX) && !keep.includes(name));
 }
 
-export function withIsolation(response: Response): Response {
+/** `extra` adds headers for this response only, such as the page's Content Security Policy. */
+export function withIsolation(response: Response, extra: Readonly<Record<string, string>> = {}): Response {
   // Opaque responses cannot be rebuilt; they would be blocked by COEP anyway.
   if (response.type === 'opaque' || response.type === 'opaqueredirect') return response;
   const headers = new Headers(response.headers);
-  for (const [name, value] of Object.entries(ISOLATION_HEADERS)) headers.set(name, value);
+  for (const [name, value] of Object.entries({ ...ISOLATION_HEADERS, ...extra })) headers.set(name, value);
   return new Response(response.body, { status: response.status, statusText: response.statusText, headers });
 }
 
