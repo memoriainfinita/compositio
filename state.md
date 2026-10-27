@@ -63,4 +63,5 @@ Web estática en GitHub Pages, en PC y móvil, para preparar audio y vídeo de e
 
 - [ ] Paso 1 en el Xiaomi (`spikes/` con `?run=all` por `adb reverse tcp:4173`)
 - [ ] Revisión del paso 6 por el usuario
+- [ ] En móvil, «Nueva versión: recargar» tapa la barra inferior (visto 2026-10-27)
 - [ ] Fase 1 según `docs/plan-2026-10-27.md`; siguiente: paso 7 (editor), sin diseño
