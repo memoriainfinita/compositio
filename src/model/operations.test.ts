@@ -85,7 +85,7 @@ describe('plan', () => {
     expect(p.render()).toEqual({ error: 'missing-measurement' });
     const m = { kind: 'loudnorm' as const, i: -20.1, tp: -3.2, lra: 7.5, thresh: -30.4, offset: 0.3 };
     expect(render(p, m)).toContain(
-      '-af loudnorm=I=-14:TP=-1.5:LRA=11:measured_I=-20.1:measured_TP=-3.2:measured_LRA=7.5:measured_thresh=-30.4:offset=0.3:linear=true:print_format=summary,aresample=48000',
+      '-af loudnorm=I=-14:TP=-1.5:LRA=11:measured_I=-20.1:measured_TP=-3.2:measured_LRA=7.5:measured_thresh=-30.4:offset=0.3:linear=true:print_format=summary,aresample=48000,aformat=channel_layouts=stereo',
     );
   });
 

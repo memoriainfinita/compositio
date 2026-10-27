@@ -101,7 +101,10 @@ function targetRate(s: OutputSettings, track: AudioTrack): number {
   return wanted;
 }
 
-const hasFades = (e: FileEdits): boolean => e.fadeIn.duration > 0 || e.fadeOut.duration > 0;
+const channelLayout = (channels: number, known?: string): string | undefined =>
+  known ?? ({ 1: 'mono', 2: 'stereo' } as Record<number, string>)[channels];
+
+const hasFades =(e: FileEdits): boolean => e.fadeIn.duration > 0 || e.fadeOut.duration > 0;
 
 const extract: Operation = {
   id: 'extract',
@@ -164,6 +167,10 @@ const convert: Operation = {
     // loudnorm works at 192 kHz, so after it the rate is always set back.
     const resample = ctx.rate !== ctx.track.sampleRate || ctx.input.settings.normalize.enabled || dither;
     if (resample) d.filters.push(`aresample=${ctx.rate}${dither ? ':osf=s16:dither_method=triangular' : ''}`);
+    // ffmpeg 5.1 (ffmpeg.wasm) cannot negotiate the channel layout after loudnorm; it is set here.
+    const n = ctx.input.settings.normalize;
+    const layout = channelLayout(c.channels === 'source' ? ctx.track.channels : c.channels, c.channels === 'source' ? ctx.track.channelLayout : undefined);
+    if (n.enabled && n.mode === 'lufs' && layout) d.filters.push(`aformat=channel_layouts=${layout}`);
     if (c.channels !== 'source') d.codec.push('-ac', String(c.channels));
     switch (c.format) {
       case 'wav':
