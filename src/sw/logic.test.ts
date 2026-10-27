@@ -26,6 +26,12 @@ describe('routeFor', () => {
     expect(routeFor(req('/Spectra-visio/index.html', 'navigate'), scope, precache)).toBe('ignore');
     expect(routeFor(req('/compositio/index.html', 'cors', 'POST'), scope, precache)).toBe('ignore');
   });
+
+  it('takes the share target post, and only that one', () => {
+    expect(routeFor(req('/compositio/share', 'navigate', 'POST'), scope, precache)).toBe('share');
+    expect(routeFor(req('/compositio/share', 'navigate'), scope, precache)).toBe('navigation');
+    expect(routeFor(req('/other/share', 'navigate', 'POST'), scope, precache)).toBe('ignore');
+  });
 });
 
 describe('caches', () => {

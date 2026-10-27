@@ -11,6 +11,7 @@ const isolation = {
 
 // scripts/copy-ffmpeg.mjs serves each core under a versioned folder; the app loads it from there.
 const coreVersion = (JSON.parse(readFileSync('node_modules/@ffmpeg/core/package.json', 'utf8')) as { version: string }).version;
+const appVersion = (JSON.parse(readFileSync('package.json', 'utf8')) as { version: string }).version;
 
 export default defineConfig({
   // Relative base: works on GitHub Pages under /compositio/ and from any other path.
@@ -18,6 +19,7 @@ export default defineConfig({
   plugins: [contentSecurityPolicy(), serviceWorker()],
   oxc: { jsx: { runtime: 'automatic', importSource: 'preact' } },
   define: {
+    __APP_VERSION__: JSON.stringify(appVersion),
     __FFMPEG_CORE__: JSON.stringify(`ffmpeg/core-${coreVersion}/`),
     // The start screen shows the core's download in bytes against this.
     __FFMPEG_WASM_BYTES__: JSON.stringify(statSync('node_modules/@ffmpeg/core/dist/esm/ffmpeg-core.wasm').size),

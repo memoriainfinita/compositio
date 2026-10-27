@@ -1,6 +1,7 @@
 import { useEffect } from 'preact/hooks';
 import { AppContext, useApp, type AppState } from '../app/state.ts';
 import { t } from '../i18n/index.ts';
+import { AboutDialog } from './About.tsx';
 import { dragging, useDropAnywhere } from './adding.ts';
 import { Home } from './Home.tsx';
 import { announcement } from './layout.ts';
@@ -40,6 +41,7 @@ function Shell() {
       </a>
       {project.value.files.length === 0 ? <Home /> : <Workspace />}
       <MontageDialogs />
+      <AboutDialog />
       {dragging.value && (
         <div class="drop-overlay" aria-hidden="true">
           <span>{t('home.drop')}</span>

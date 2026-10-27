@@ -1,6 +1,7 @@
 import { useApp } from '../app/state.ts';
 import { t } from '../i18n/index.ts';
-import { FolderIcon, ListIcon, RedoIcon, UndoIcon } from './icons.tsx';
+import { aboutOpen } from './About.tsx';
+import { FolderIcon, InfoIcon, ListIcon, RedoIcon, UndoIcon } from './icons.tsx';
 import { layout } from './layout.ts';
 import { Logo } from './Logo.tsx';
 import { montageDialog } from './Montages.tsx';
@@ -40,6 +41,9 @@ export function Header({ home = false, onFiles }: Props) {
           </button>
         </>
       )}
+      <button type="button" class="icon-button" aria-label={t('header.about')} title={t('header.about')} aria-haspopup="dialog" onClick={() => (aboutOpen.value = true)}>
+        <InfoIcon />
+      </button>
       {compact && !home ? (
         <button type="button" class="icon-button" aria-label={t('header.montages')} title={t('header.montages')} aria-haspopup="dialog" onClick={() => (montageDialog.value = 'library')}>
           <FolderIcon />

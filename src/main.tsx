@@ -5,6 +5,7 @@ import './ui/app.css';
 import { render } from 'preact';
 import { createMontageLibrary } from './app/montages.ts';
 import { createPresetStore, starterPresets } from './app/presets.ts';
+import { takeShared, wasShared } from './app/share.ts';
 import { createAppState } from './app/state.ts';
 import { createEngine } from './engine/index.ts';
 import { bindDocumentLang, lang, resolveLang, t } from './i18n/index.ts';
@@ -13,8 +14,10 @@ import { emptyProject } from './model/project.ts';
 import { createStore } from './model/store.ts';
 import { createAutosave, openStorage, type Storage } from './model/storage.ts';
 import { startServiceWorker } from './sw/register.ts';
+import { takeIn } from './ui/adding.ts';
 import { App } from './ui/App.tsx';
-import { watchLayout } from './ui/layout.ts';
+import { installPrompt, type InstallPrompt } from './ui/Home.tsx';
+import { announce, watchLayout } from './ui/layout.ts';
 
 const root = document.documentElement;
 
@@ -55,8 +58,21 @@ async function boot() {
 
   const engine = createEngine();
   const app = createAppState(store, engine, presets, montages);
+  addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    installPrompt.value = e as unknown as InstallPrompt;
+  });
   render(<App state={app} />, document.getElementById('app')!);
   root.dataset.app = 'ready';
+
+  // Files shared from another app arrive as if they had been dropped.
+  if (wasShared()) {
+    history.replaceState(null, '', location.pathname);
+    void takeShared().then(async (shared) => {
+      const ids = await takeIn(app, shared.map((file) => ({ file, path: file.name })));
+      if (ids.length) announce(t('share.received', { n: ids.length }));
+    });
+  }
 
   void startServiceWorker((apply) => (app.update.value = apply));
 

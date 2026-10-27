@@ -1,6 +1,6 @@
 // Service worker: isolation headers for multithreaded ffmpeg.wasm, offline app shell,
 // ffmpeg cores cached by version, and updates that wait until the user accepts them.
-import { cachesToDelete, ffmpegCacheName, routeFor, shellCacheName, withIsolation } from './logic';
+import { cachesToDelete, ffmpegCacheName, routeFor, SHARE_CACHE, SHARE_QUERY, shellCacheName, withIsolation } from './logic';
 
 declare const self: ServiceWorkerGlobalScope;
 // Filled in at build time by build/sw-plugin.ts.
@@ -27,7 +27,7 @@ self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches
       .keys()
-      .then((names) => Promise.all(cachesToDelete(names, [SHELL, FFMPEG]).map((name) => caches.delete(name))))
+      .then((names) => Promise.all(cachesToDelete(names, [SHELL, FFMPEG, SHARE_CACHE]).map((name) => caches.delete(name))))
       .then(() => self.clients.claim()),
   );
 });
@@ -39,10 +39,27 @@ self.addEventListener('message', (event) => {
 self.addEventListener('fetch', (event) => {
   const route = routeFor(event.request, self.registration.scope, precache);
   if (route === 'ignore') return;
+  if (route === 'share') return event.respondWith(receiveShare(event.request));
   // The page gets its policy as a header too: only a header can forbid framing it.
   const extra: Record<string, string> = route === 'navigation' ? { 'Content-Security-Policy': __CSP__ } : {};
   event.respondWith(respond(event.request, route, (p) => event.waitUntil(p)).then((r) => withIsolation(r, extra)));
 });
+
+/**
+ * Files shared from another app (the manifest's share target): stored until the page takes them,
+ * then the page opens with `?share`. Each file keeps its name in the cache key.
+ */
+async function receiveShare(request: Request): Promise<Response> {
+  const data = await request.formData().catch(() => null);
+  const files = (data?.getAll('media') ?? []).filter((f): f is File => f instanceof File);
+  const cache = await caches.open(SHARE_CACHE);
+  await Promise.all(
+    files.map((f, i) =>
+      cache.put(scopeUrl(`share/${i}/${encodeURIComponent(f.name)}`), new Response(f, { headers: { 'Content-Type': f.type || 'application/octet-stream', 'Last-Modified': new Date(f.lastModified).toUTCString() } })),
+    ),
+  );
+  return Response.redirect(scopeUrl(`./?${SHARE_QUERY}`), 303);
+}
 
 /** Cores being stored: a second request for one waits for it instead of downloading it again. */
 const storing = new Map<string, Promise<void>>();

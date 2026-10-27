@@ -33,15 +33,23 @@ export function withIsolation(response: Response, extra: Readonly<Record<string,
   return new Response(response.body, { status: response.status, statusText: response.statusText, headers });
 }
 
-export type Route = 'navigation' | 'shell' | 'ffmpeg' | 'network' | 'ignore';
+/** Files shared to the app wait here until the page takes them. */
+export const SHARE_CACHE = `${CACHE_PREFIX}share`;
+/** Where the manifest's share target posts, relative to the scope. */
+export const SHARE_PATH = 'share';
+/** The page the share target redirects to; the page reads the shared files when it sees it. */
+export const SHARE_QUERY = 'share';
+
+export type Route = 'navigation' | 'shell' | 'ffmpeg' | 'network' | 'share' | 'ignore';
 
 /** Decides how the service worker answers a request. `precache` holds paths relative to the scope. */
 export function routeFor(request: { url: string; method: string; mode: string }, scope: string, precache: ReadonlySet<string>): Route {
-  if (request.method !== 'GET') return 'ignore';
   const url = new URL(request.url);
   const base = new URL(scope);
   if (url.origin !== base.origin || !url.pathname.startsWith(base.pathname)) return 'ignore';
   const path = url.pathname.slice(base.pathname.length);
+  if (request.method === 'POST' && path === SHARE_PATH) return 'share';
+  if (request.method !== 'GET') return 'ignore';
   if (request.mode === 'navigate') return 'navigation';
   if (path.startsWith('ffmpeg/')) return 'ffmpeg';
   if (precache.has(path)) return 'shell';
