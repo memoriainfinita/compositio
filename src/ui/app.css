@@ -1523,7 +1523,6 @@ svg.mix-thumb {
 
 .reopen-item.missing {
   border-color: var(--warn-line);
-  color: var(--warn);
 }
 
 .reopen-state {

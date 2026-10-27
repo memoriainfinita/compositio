@@ -9,7 +9,7 @@ Prepare audio and video for live shows in the browser. Everything runs on your d
 
 **Live:** https://memoriainfinita.github.io/compositio/
 
-**Status:** in development. Files can be added and inspected; processing, the editor and the mix are not there yet.
+**Status:** phase 1 complete, first version not released yet. How to use it: [docs/usage.md](docs/usage.md). What each browser can do: [docs/browsers.md](docs/browsers.md).
 
 ![compositio on a phone, dark theme: six WAV files with their durations, four of them in the batch, and an alert about a text file that was not added](docs/compositio-demo.png)
 
@@ -21,6 +21,40 @@ Prepare audio and video for live shows in the browser. Everything runs on your d
 - The editor shows the active file's format, sample rate, bit depth and channels
 - Alerts for files over 2 GB, files that are not audio or video, and single-thread mode in browsers without multithreading
 - A restored session lists its files as missing until they are dropped again
+
+## Editor
+
+- Waveform drawn part by part, playback from the file without decoding it whole
+- In and out handles, fades with six curves, silences at the ends shaded
+- Zoom, overview strip, keyboard shortcuts (Space, I, O, arrows)
+- A/B: the original against the result in real time, before processing
+
+## Output
+
+- Five steps in a fixed order: extract audio, trim, normalize (two-pass loudnorm, LUFS or peak), convert (WAV, FLAC, MP3, AAC/M4A, Opus, OGG), name and download
+- Settings for the batch or for one file, with a mark on files that have their own
+- One file downloads directly; a batch downloads file by file or as one zip
+- Presets, with import and export; presets as quick actions that process at once
+- A queue with progress, cancel and retry
+
+## Mix
+
+- Tracks on a strip over the timeline, reordered by dragging or with the keyboard
+- Overlaps dragged on the strip or set to the tenth of a second; dry cuts
+- Listen to about 20 s around a transition before generating the whole mix
+- Fade in and out, loudness matching, WAV 24-bit or MP3 320, 44.1 or 48 kHz
+- Start times as CSV
+
+## Montages
+
+- Save the work with a name, open it later, export and import it as a file
+- A montage keeps settings only, never the audio: when reopened, files are paired by name and size
+
+## App
+
+- Installable where the browser offers it; files can be shared to it on Android
+- «Try an example» with three sample tracks
+- About, with the licences and the code of compositio, ffmpeg.wasm and FFmpeg, and a button that copies the technical details for an issue
 
 ![compositio on desktop, light theme: the file list with the active file, its technical line in the editor, and the five output steps](docs/compositio-desktop.png)
 
@@ -37,11 +71,11 @@ Dark and light themes that follow the system, Spanish and English, and layouts f
 
 ## Browsers
 
-The tests run in Firefox.
+The tests run in Firefox. Limits by browser: [docs/browsers.md](docs/browsers.md).
 
 ## Stack
 
-Preact, Vite and TypeScript; ffmpeg.wasm with ffmpeg 5.1.4. pnpm.
+Preact, Vite and TypeScript; ffmpeg.wasm with ffmpeg 5.1.4; SortableJS; client-zip. pnpm.
 
 ## Scripts
 
