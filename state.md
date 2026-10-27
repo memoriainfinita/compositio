@@ -18,10 +18,11 @@ Web estática en GitHub Pages, en PC y móvil, para preparar audio y vídeo de e
 - Sin MVP: robusta y profesional desde el principio (2026-10-27). TypeScript 6.0.3 (typescript-eslint no admite el 7) + Vite 8 + pnpm; `vendor/` archivado en `.archive/`
 - Lienzo de diseño: https://claude.ai/artifact/S5yZdu4UddtHnTEpRWMAPy. Página «Diseño» al día con el spec (2026-10-27), página «Archivo» con lo superado; sin revisar por el usuario; detalle en la sección «Interfaz» del spec
 - Hoja de ruta y plan de la fase 1 escritos: `docs/plan-2026-10-27.md`
-- Paso 1 (pruebas de riesgo) hecho en Firefox de escritorio; resultados en la sección «Pruebas de riesgo» del spec. Falta el Xiaomi (sin conectar por adb) y confirmar el multihilo en GitHub Pages en el paso 2
+- Paso 1 (pruebas de riesgo) hecho en Firefox de escritorio; resultados en la sección «Pruebas de riesgo» del spec. Falta el Xiaomi (sin conectar por adb)
 - `spikes/`: proyecto desechable de las pruebas (pnpm + Vite, `?run=all` las lanza todas); se archiva al cerrar el paso 1
 - Librería de zip: client-zip 2.5.1 (2026-10-27)
-- Paso 2 hecho en local: repo git (rama `main`, sin remoto), lint, Vitest, Playwright en Firefox (3 e2e del service worker pasan), CI con despliegue a Pages, LICENSE GPL-3.0-only, README, CONTRIBUTING, CHANGELOG. Falta crear el repo en GitHub, activar Pages y ver pasar la CI
+- Paso 2 hecho: repo público https://github.com/memoriainfinita/compositio (rama `main`), lint, Vitest, Playwright en Firefox (3 e2e del service worker pasan), CI con despliegue a Pages, LICENSE GPL-3.0-only, README, CONTRIBUTING, CHANGELOG
+- Publicada en https://memoriainfinita.github.io/compositio/ (Pages con fuente GitHub Actions). Primera CI verde con despliegue (2026-10-27). En Firefox: aislada tras una recarga, memoria WebAssembly compartida disponible, núcleo multihilo servido con COEP; ffmpeg multihilo sin ejecutar allí hasta que el motor entre en la app (paso 4)
 - Service worker propio (`src/sw/`, sin vite-plugin-pwa): cabeceras COOP/COEP, app precacheada, núcleos de ffmpeg en caché al primer uso, versión nueva solo al aceptarla. Sin cubrir por e2e: la recarga tras Ctrl+Mayús+R
 - Interfaz: solo un marcador de posición y el aviso de versión nueva, hasta el paso 5
 
@@ -44,6 +45,5 @@ Web estática en GitHub Pages, en PC y móvil, para preparar audio y vídeo de e
 
 ## TODO
 
-- [ ] Crear `memoriainfinita/compositio` en GitHub, push, activar Pages (fuente: GitHub Actions) y confirmar el multihilo en Pages
 - [ ] Paso 1 en el Xiaomi (`spikes/` con `?run=all` por `adb reverse tcp:4173`)
 - [ ] Fase 1 según `docs/plan-2026-10-27.md`; siguiente: paso 3 (modelo y estado)
