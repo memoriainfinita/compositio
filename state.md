@@ -37,7 +37,7 @@ Web estática en GitHub Pages, en PC y móvil, para preparar audio y vídeo de e
 - Probe: un archivo sin duración en la cabecera se mide decodificando (WebM de MediaRecorder)
 - Decidido al implementar el paso 7, sin revisar por el usuario: Espacio reproduce también con el foco en un botón del editor; los fundidos solo se desactivan con «Extraer audio» en copiar; B usa la última medición del archivo mientras llega la nueva
 - e2e: 51 en Firefox (service worker 4, interfaz 9 + archivos 7 + editor 6 en cada tema, motor 3); axe sin infracciones WCAG 2.2 AA en las tres disposiciones y los dos temas. 214 pruebas unitarias (contando cada par de contraste del tema)
-- Batería e2e completa: «a restored session…» (archivos) y las de actualización del service worker fallan por tiempo en la ejecución completa; solas pasan. Causa en la primera: tras recargar durante la primera descarga del núcleo, el motor tarda 35-60 s en quedar listo (también en el commit del paso 6)
+- e2e intermitentes (2026-10-27): «a restored session…» (archivos) y las de actualización del service worker fallaron por tiempo en la batería completa; solas pasan. En la primera, el motor tardó 35-80 s en quedar listo cuando axe analizaba la página justo tras recargar, con el núcleo ya en la caché del service worker: el guardado del service worker queda descartado. Sin axe, recargar a mitad de descarga da 2-5 s. Horas después, el mismo código pasó 3 de 3, el diagnóstico 5 de 5 sin atascos y la batería completa 51 de 51. Causa sin confirmar
 
 ## Patterns
 
@@ -71,5 +71,5 @@ Web estática en GitHub Pages, en PC y móvil, para preparar audio y vídeo de e
 - [ ] Paso 1 en el Xiaomi (`spikes/` con `?run=all` por `adb reverse tcp:4173`)
 - [ ] Revisión de los pasos 6 y 7 por el usuario
 - [ ] En móvil, «Nueva versión: recargar» tapa la barra inferior (visto 2026-10-27)
-- [ ] Service worker: recargar durante la primera descarga del núcleo deja el motor 35-60 s esperando (visto 2026-10-27)
+- [ ] e2e intermitentes por tiempo en la batería completa (ver Status): repetir cuando vuelva a fallar y medir la carga del motor tras axe
 - [ ] Fase 1 según `docs/plan-2026-10-27.md`; siguiente: paso 8 (salida), sin diseño
