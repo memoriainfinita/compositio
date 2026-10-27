@@ -444,6 +444,230 @@ main:focus {
   overflow-wrap: anywhere;
 }
 
+.editor-stage {
+  display: grid;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.editor-video {
+  width: 100%;
+  max-height: 260px;
+  border-radius: var(--radius);
+  background: #000;
+}
+
+.wave-wrap {
+  display: grid;
+  gap: 6px;
+}
+
+.wave {
+  position: relative;
+  height: 160px;
+  touch-action: none;
+  user-select: none;
+}
+
+.wave-canvas-box {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  border-radius: var(--radius);
+}
+
+.overview .wave-canvas-box {
+  border-radius: 6px;
+}
+
+.wave-canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.wave-surface {
+  position: absolute;
+  inset: 0;
+  cursor: text;
+}
+
+.wave-playhead {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: -1px;
+  width: 2px;
+  background: var(--text);
+  pointer-events: none;
+}
+
+/* Handles: a wide invisible hit area around a thin visible mark. */
+.wave-handle {
+  position: absolute;
+  z-index: 1;
+}
+
+.wave-handle.in,
+.wave-handle.out {
+  top: 0;
+  bottom: 0;
+  width: 24px;
+  margin-left: -12px;
+  cursor: ew-resize;
+}
+
+.wave-handle.in::after,
+.wave-handle.out::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 11px;
+  width: 2px;
+  background: var(--accent);
+}
+
+.wave-handle.region {
+  bottom: 0;
+  height: 24px;
+  background: var(--accent-tint);
+  cursor: grab;
+}
+
+.wave-handle.fade {
+  top: 0;
+  width: 24px;
+  height: 24px;
+  margin-left: -12px;
+  cursor: ew-resize;
+}
+
+.wave-handle.fade::after {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: 7px;
+  width: 10px;
+  height: 10px;
+  border: 2px solid var(--accent);
+  border-radius: 2px;
+  background: var(--surface);
+}
+
+.wave-handle:focus-visible,
+.wave-surface:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: -2px;
+}
+
+.overview {
+  position: relative;
+  height: 28px;
+  overflow: hidden;
+  cursor: pointer;
+  touch-action: none;
+}
+
+.overview-window {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  border: 1px solid var(--accent);
+  border-radius: 4px;
+  background: var(--accent-tint);
+  pointer-events: none;
+}
+
+.transport {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.transport-time {
+  font-variant-numeric: tabular-nums;
+}
+
+.segmented {
+  display: inline-flex;
+  overflow: hidden;
+  border: 1px solid var(--control);
+  border-radius: var(--radius);
+}
+
+.segment {
+  min-width: var(--touch);
+  min-height: calc(var(--touch) - 2px);
+  padding: 0 12px;
+  border: none;
+  background: transparent;
+  color: var(--text-2);
+  font-weight: 600;
+}
+
+.segment[aria-pressed='true'] {
+  background: var(--accent);
+  color: var(--on-accent);
+}
+
+.edit-fields {
+  display: grid;
+  gap: 12px;
+}
+
+.edit-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 16px;
+}
+
+.field {
+  display: grid;
+  gap: 4px;
+}
+
+.field label {
+  color: var(--muted);
+  font-size: 0.8125rem;
+}
+
+.input {
+  min-height: var(--touch);
+  padding: 0 10px;
+  border: 1px solid var(--field-line);
+  border-radius: var(--radius);
+  background: var(--inset);
+  color: var(--text);
+  font: inherit;
+}
+
+.input.mono {
+  width: 11ch;
+  font-family: var(--mono);
+}
+
+.fade-field .input.mono {
+  width: 10ch;
+}
+
+.input:disabled {
+  border-color: var(--control);
+  color: var(--disabled);
+}
+
+.input[aria-invalid='true'] {
+  border-color: var(--warn);
+}
+
+.fades-fold summary {
+  min-height: var(--touch);
+  line-height: var(--touch);
+  color: var(--text-2);
+  cursor: pointer;
+}
+
 /* Alerts and progress */
 
 .alerts {
@@ -695,4 +919,33 @@ main:focus {
   right: 16px;
   bottom: 16px;
   z-index: 5;
+}
+
+/* Phone: the waveform takes less height and the handles take a finger. */
+.workspace.mobile .wave {
+  height: 120px;
+}
+
+.workspace.mobile .wave-handle.in,
+.workspace.mobile .wave-handle.out,
+.workspace.mobile .wave-handle.fade {
+  width: var(--touch);
+  margin-left: calc(var(--touch) / -2);
+}
+
+.workspace.mobile .wave-handle.in::after,
+.workspace.mobile .wave-handle.out::after {
+  left: calc(var(--touch) / 2 - 1px);
+}
+
+.workspace.mobile .wave-handle.fade {
+  height: var(--touch);
+}
+
+.workspace.mobile .wave-handle.fade::after {
+  left: calc(var(--touch) / 2 - 7px);
+}
+
+.workspace.mobile .wave-handle.region {
+  height: 24px;
 }

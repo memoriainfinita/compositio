@@ -3,12 +3,11 @@
 
 import { useSignal } from '@preact/signals';
 import type { JSX } from 'preact';
-import { useApp } from '../app/state.ts';
 import { t, type Key } from '../i18n/index.ts';
 import { STEPS, type Step } from '../model/settings.ts';
 import { Dialog } from './Dialog.tsx';
+import { EditorPanel } from './editor/Editor.tsx';
 import { FileList, FilesHead } from './Files.tsx';
-import { techLine } from './format.ts';
 import { Header } from './Header.tsx';
 import { ListIcon, MixIcon, SlidersIcon, WaveIcon } from './icons.tsx';
 import { layout } from './layout.ts';
@@ -24,28 +23,6 @@ function FilesPanel({ onActivate }: { onActivate?: () => void }) {
       </h2>
       <FilesHead />
       <FileList onActivate={onActivate} />
-    </section>
-  );
-}
-
-/** The active file's name and technical line; its waveform arrives in step 7. */
-function EditorPanel() {
-  const { project, files } = useApp();
-  const file = project.value.files.find((f) => f.id === files.active.value);
-  const info = file && files.infos.value.get(file.id);
-  return (
-    <section class="card editor" aria-labelledby="editor-title">
-      <h2 id="editor-title" class="panel-title">
-        {t('editor.title')}
-      </h2>
-      {file ? (
-        <div class="editor-file">
-          <span class="strong">{file.name}</span>
-          <span class="muted small mono">{info ? techLine(file.name, info) : files.sources.value.has(file.id) ? '' : t('files.missing')}</span>
-        </div>
-      ) : (
-        <p class="empty">{t('editor.empty')}</p>
-      )}
     </section>
   );
 }
@@ -160,7 +137,7 @@ export function Workspace() {
         {view.value === 'files' && <FilesPanel onActivate={() => (view.value = 'editor')} />}
         {view.value === 'editor' && (
           <>
-            <EditorPanel />
+            <EditorPanel compact />
             <button type="button" class="button wide" onClick={() => (outputOpen.value = true)}>
               <SlidersIcon />
               {t('output.open')}

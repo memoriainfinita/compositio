@@ -33,7 +33,11 @@ Web estática en GitHub Pages, en PC y móvil, para preparar audio y vídeo de e
 - Paso 6 hecho (2026-10-27): archivos. Lógica pura en `src/app/intake.ts` (filtro por MIME o extensión, orden natural por ruta, duplicados por nombre, tamaño y fecha y, dentro de una tanda, también ruta; límite 2 GiB; emparejamiento; recorrido de carpetas) y sesión en `src/app/files.ts` (File, info, silencios, selección, activo, avisos; nada se guarda ni se deshace). La tanda entra entera tras el probe, en un paso de deshacer; silencios después en la cola de fondo. Soltar en toda la ventana con resaltado, «Elegir archivos», lista con casillas, «N de M», todos/ninguno, «Quitar» deshacible, archivos que faltan atenuados y emparejados al soltarlos, línea técnica en el editor, avisos de 2 GB, no audio y un solo hilo. Inicio con carga del motor en MB
 - Decidido al implementar el paso 6, sin revisar por el usuario: los archivos nuevos y los emparejados entran seleccionados; el primero de la primera tanda pasa a activo; el aviso «Modo de un solo hilo» se puede cerrar (en el lienzo no tiene botón); el pie de la columna es un botón que abre el selector; la fila muestra la duración del probe y, si falta el archivo, la guardada
 - Service worker: el núcleo de ffmpeg se sirve mientras se guarda en caché (`waitUntil`), y una segunda petición espera a que acabe de guardarse
-- e2e: 39 en Firefox (service worker 4, interfaz 9 + archivos 7 en cada tema, motor 3); axe sin infracciones WCAG 2.2 AA en las tres disposiciones y los dos temas. 193 pruebas unitarias (contando cada par de contraste del tema)
+- Paso 7 hecho (2026-10-27): editor en `src/ui/editor/`, diseño en `docs/paso-7-diseno-2026-10-27.md`. Onda propia en canvas (wavesurfer descartado por la CSP), picos por tramos de 10 min con ffmpeg (trabajo `peaks`, prioridad `view` de la cola), reproducción desde el archivo con copia de escucha Opus/AAC si el navegador no lo reproduce, imagen del vídeo sobre la onda, tiradores como sliders accesibles, zoom y vista general de aures, atajos, campos de tiempo y fundidos, A/B con Web Audio (medición de loudnorm en cola al usar B con normalizar)
+- Probe: un archivo sin duración en la cabecera se mide decodificando (WebM de MediaRecorder)
+- Decidido al implementar el paso 7, sin revisar por el usuario: Espacio reproduce también con el foco en un botón del editor; los fundidos solo se desactivan con «Extraer audio» en copiar; B usa la última medición del archivo mientras llega la nueva
+- e2e: 51 en Firefox (service worker 4, interfaz 9 + archivos 7 + editor 6 en cada tema, motor 3); axe sin infracciones WCAG 2.2 AA en las tres disposiciones y los dos temas. 214 pruebas unitarias (contando cada par de contraste del tema)
+- Batería e2e completa: «a restored session…» (archivos) y las de actualización del service worker fallan por tiempo en la ejecución completa; solas pasan. Causa en la primera: tras recargar durante la primera descarga del núcleo, el motor tarda 35-60 s en quedar listo (también en el commit del paso 6)
 
 ## Patterns
 
@@ -51,6 +55,9 @@ Web estática en GitHub Pages, en PC y móvil, para preparar audio y vídeo de e
 - [ffmpeg.wasm] El nivel de registro es global a la instancia (un `-v error` previo oculta loudnorm, silencedetect y progreso): cada orden fija `-loglevel`. Confirmed 2026-10.
 - [ffmpeg.wasm] Tras un `exec` fallido la instancia queda rota (`Aborted()`): se desecha y se carga otra. Confirmed 2026-10.
 - [ffmpeg.wasm] loudnorm seguido de aresample no negocia la distribución de canales en 5.1.4: añadir `aformat=channel_layouts=...`. Confirmed 2026-10.
+- [e2e] `media.volume_scale` no silencia lo que sale por Web Audio: la prueba del editor pasa toda conexión a `AudioDestinationNode` por una ganancia cero (`addInitScript`). Confirmed 2026-10.
+- [webaudio] `createMediaElementSource` solo una vez por elemento: un elemento de medio nuevo por cada fuente (`key={src}`). Confirmed 2026-10.
+- [csp] wavesurfer.js 8 necesita nonce para su `<style>`: con `style-src 'self'` no sirve. Posiciones desde JS (`element.style`) sí están permitidas. Confirmed 2026-10.
 - [e2e] Una carpeta soltada no se puede construir desde la página: entradas con la forma de `webkitGetAsEntry` sobre un `DragEvent` con `dataTransfer` redefinido. Los File de prueba llevan `lastModified` fijo, o nunca son duplicados. Confirmed 2026-10.
 
 ## Preferences
@@ -62,6 +69,7 @@ Web estática en GitHub Pages, en PC y móvil, para preparar audio y vídeo de e
 ## TODO
 
 - [ ] Paso 1 en el Xiaomi (`spikes/` con `?run=all` por `adb reverse tcp:4173`)
-- [ ] Revisión del paso 6 por el usuario
+- [ ] Revisión de los pasos 6 y 7 por el usuario
 - [ ] En móvil, «Nueva versión: recargar» tapa la barra inferior (visto 2026-10-27)
-- [ ] Fase 1 según `docs/plan-2026-10-27.md`; siguiente: paso 7 (editor), sin diseño
+- [ ] Service worker: recargar durante la primera descarga del núcleo deja el motor 35-60 s esperando (visto 2026-10-27)
+- [ ] Fase 1 según `docs/plan-2026-10-27.md`; siguiente: paso 8 (salida), sin diseño

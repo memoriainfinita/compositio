@@ -15,9 +15,9 @@ export default defineConfig({
   reporter: process.env.CI ? 'github' : 'list',
   use: { trace: 'retain-on-failure' },
   projects: [
-    { name: 'app', testMatch: /(service-worker|ui|files)\.spec\.ts/, use: { ...firefox(), locale: 'es-ES', baseURL: 'http://127.0.0.1:4174/' } },
+    { name: 'app', testMatch: /(service-worker|ui|files|editor)\.spec\.ts/, use: { ...firefox(), locale: 'es-ES', baseURL: 'http://127.0.0.1:4174/' } },
     // The interface again in the light theme.
-    { name: 'app-light', testMatch: /(ui|files)\.spec\.ts/, use: { ...firefox(1), locale: 'es-ES', baseURL: 'http://127.0.0.1:4174/' } },
+    { name: 'app-light', testMatch: /(ui|files|editor)\.spec\.ts/, use: { ...firefox(1), locale: 'es-ES', baseURL: 'http://127.0.0.1:4174/' } },
     { name: 'engine', testMatch: /engine\.spec\.ts/, use: { ...firefox(), baseURL: 'http://127.0.0.1:4176/' } },
   ],
   webServer: [

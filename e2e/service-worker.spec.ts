@@ -3,6 +3,9 @@ import { readFile } from 'node:fs/promises';
 import { extname, join, normalize } from 'node:path';
 import { expect, test, type Page } from '@playwright/test';
 
+// Isolation and an update each wait up to 15 s; beside the editor's ffmpeg tests they need the room.
+test.describe.configure({ timeout: 60_000 });
+
 async function isolatedPage(page: Page, url = './') {
   await page.goto(url);
   // First visit: the service worker takes control and the page reloads once with the headers.

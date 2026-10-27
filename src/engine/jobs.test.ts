@@ -32,6 +32,16 @@ describe('jobs', () => {
     expect(runner.requests[0]?.args.slice(-3)).toEqual(['/in/0/canción.wav', '-o', '/out/probe.json']);
   });
 
+  it('decodes to find the duration when the file does not say it', async () => {
+    const noDuration = { ...wav, format: { ...wav.format, duration: undefined }, streams: wav.streams.map((s) => ({ ...s, duration: undefined })) };
+    const runner = fakeRunner(
+      () => ({ files: new Map([['probe.json', new Blob([JSON.stringify(noDuration)])]]) }),
+      () => ({ log: ['size=N/A time=00:00:01.00 bitrate=N/A', 'size=N/A time=00:00:02.48 bitrate=N/A'] }),
+    );
+    expect((await probeFile(runner, file)).duration).toBe(2.48);
+    expect(runner.requests[1]?.args.slice(-3)).toEqual(['null', '-f', 'null', '-'].slice(-3));
+  });
+
   it('turns a failed command into an engine error', async () => {
     const runner = fakeRunner(() => ({ code: 1, log: ['Invalid data found when processing input'] }));
     await expect(probeFile(runner, file)).rejects.toMatchObject({ code: 'ffmpeg-failed' });

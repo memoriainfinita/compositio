@@ -72,3 +72,33 @@ export const CloseIcon = () => (
     <path d="M6 6 L18 18 M18 6 L6 18" />
   </Svg>
 );
+
+export const PlayIcon = () => (
+  <Svg>
+    <path d="M7 5 L19 12 L7 19 Z" />
+  </Svg>
+);
+
+export const PauseIcon = () => (
+  <Svg>
+    <path d="M8 5 v14 M16 5 v14" />
+  </Svg>
+);
+
+export const ZoomInIcon = () => (
+  <Svg>
+    <path d="M11 4 a7 7 0 1 0 0.01 0 M20 20 l-4 -4 M8 11 h6 M11 8 v6" />
+  </Svg>
+);
+
+export const ZoomOutIcon = () => (
+  <Svg>
+    <path d="M11 4 a7 7 0 1 0 0.01 0 M20 20 l-4 -4 M8 11 h6" />
+  </Svg>
+);
+
+export const FitIcon = () => (
+  <Svg>
+    <path d="M4 9 V4 h5 M15 4 h5 v5 M20 15 v5 h-5 M9 20 H4 v-5" />
+  </Svg>
+);

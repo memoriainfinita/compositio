@@ -4,8 +4,11 @@
 import { classify, EngineError, type EngineErrorCode, type RunOptions } from './runner.ts';
 
 export type JobStatus = 'queued' | 'running' | 'done' | 'failed' | 'cancelled';
-/** `user` jobs show in the queue popup; `background` ones (probe, silences) do not. */
-export type Priority = 'user' | 'background';
+/**
+ * `user` jobs show in the queue popup and run first. `view` ones (the active file's waveform and
+ * what its B needs) and `background` ones (probe, silences) stay hidden, in that order.
+ */
+export type Priority = 'user' | 'view' | 'background';
 
 export interface JobView<R = unknown> {
   id: string;
@@ -60,6 +63,7 @@ export function createQueue(onBusyChange: (busy: boolean) => void = () => {}): Q
 
   const next = (): Entry<unknown> | undefined =>
     entries.find((e) => e.view.status === 'queued' && e.view.priority === 'user') ??
+    entries.find((e) => e.view.status === 'queued' && e.view.priority === 'view') ??
     entries.find((e) => e.view.status === 'queued');
 
   const pump = () => {

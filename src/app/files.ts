@@ -3,7 +3,9 @@
 // the references (spec, «Modelo»).
 
 import { signal, type Signal } from '@preact/signals';
+import type { Peaks } from '../engine/peaks.ts';
 import type { Silences } from '../model/edits.ts';
+import type { Measurement } from '../model/operations.ts';
 import { audioTracks, isVideo, type MediaInfo } from '../model/media.ts';
 import { addFiles, newId } from '../model/project.ts';
 import type { Store } from '../model/store.ts';
@@ -32,6 +34,12 @@ export interface Files {
   /** Files probed so far out of those waiting, across every batch still being analysed. */
   analyzing: Signal<{ done: number; total: number } | null>;
   alerts: Signal<readonly Alert[]>;
+  /** Waveforms, filled part by part; a new object for every part so the editor redraws. */
+  peaks: Signal<ReadonlyMap<string, Peaks>>;
+  /** Object URLs of copies to listen to, for files the browser cannot play. */
+  listening: Signal<ReadonlyMap<string, string>>;
+  /** Normalizing's first pass, by file and by what it depends on (`measureKey`). */
+  measurements: Signal<ReadonlyMap<string, Measurement>>;
 }
 
 export function createFiles(store: Store): Files {
@@ -43,6 +51,9 @@ export function createFiles(store: Store): Files {
     active: signal(null),
     analyzing: signal(null),
     alerts: signal([]),
+    peaks: signal(new Map()),
+    listening: signal(new Map()),
+    measurements: signal(new Map()),
   };
   // Undoing an addition, or removing files, takes them out of the selection and the editor. Their
   // File stays in `sources`, so redoing brings them back whole.
