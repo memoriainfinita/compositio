@@ -24,6 +24,8 @@ Web estática en GitHub Pages, en PC y móvil, para preparar audio y vídeo de e
 - Paso 2 hecho: repo público https://github.com/memoriainfinita/compositio (rama `main`), lint, Vitest, Playwright en Firefox (3 e2e del service worker pasan), CI con despliegue a Pages, LICENSE GPL-3.0-only, README, CONTRIBUTING, CHANGELOG
 - Publicada en https://memoriainfinita.github.io/compositio/ (Pages con fuente GitHub Actions). Primera CI verde con despliegue (2026-10-27). En Firefox: aislada tras una recarga, memoria WebAssembly compartida disponible, núcleo multihilo servido con COEP; ffmpeg multihilo sin ejecutar allí hasta que el motor entre en la app (paso 4)
 - Service worker propio (`src/sw/`, sin vite-plugin-pwa): cabeceras COOP/COEP, app precacheada, núcleos de ffmpeg en caché al primer uso, versión nueva solo al aceptarla. Sin cubrir por e2e: la recarga tras Ctrl+Mayús+R
+- Paso 3 hecho (2026-10-27): modelo en `src/model/` sin interfaz. Medio por pistas, ediciones del archivo, línea de tiempo con transición por clip, operaciones declarativas que construyen la orden de ffmpeg (medir y aplicar al normalizar), nombres de salida, formatos con versión y migraciones (valibot 1.5.0), proyecto inmutable con deshacer de 200 pasos y gestos agrupados, IndexedDB con autoguardado. 58 pruebas unitarias del modelo (63 en total). Las órdenes generadas pasan por ffmpeg 8.1.1 nativo con tonos (script fuera del repo); sin probar aún en ffmpeg.wasm 5.1.4
+- Silencios detectados, información del medio y selección viven en la sesión: ni se guardan ni se deshacen
 - Interfaz: solo un marcador de posición y el aviso de versión nueva, hasta el paso 5
 
 ## Patterns
@@ -46,4 +48,4 @@ Web estática en GitHub Pages, en PC y móvil, para preparar audio y vídeo de e
 ## TODO
 
 - [ ] Paso 1 en el Xiaomi (`spikes/` con `?run=all` por `adb reverse tcp:4173`)
-- [ ] Fase 1 según `docs/plan-2026-10-27.md`; siguiente: paso 3 (modelo y estado)
+- [ ] Fase 1 según `docs/plan-2026-10-27.md`; siguiente: paso 4 (motor). Incluye leer la información del medio de la salida de ffmpeg y pasar las órdenes del modelo por ffmpeg.wasm
