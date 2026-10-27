@@ -40,6 +40,7 @@ Web estática en GitHub Pages, en PC y móvil, para preparar audio y vídeo de e
 - [sw] Firefox dispara `controllerchange` también en una página ya aislada por el mismo worker: recargar solo si no está aislada o si el usuario aceptó la versión. Confirmed 2026-10.
 - [e2e] Playwright no intercepta `sw.js` en Firefox: las pruebas de actualización sirven `dist` con su propio servidor. Esperar el aislamiento con `waitForFunction`, que sobrevive a la recarga. Confirmed 2026-10.
 - [sw] Cachés con prefijo `compositio-`: en github.io comparten CacheStorage con otras apps del mismo origen. Confirmed 2026-10.
+- [ci] Playwright en CI: `playwright install firefox` sin `--with-deps`; con apt, el mirror de Azure tardó más de 12 min en Ubuntu 26 y la imagen ya trae las librerías de Firefox. Trabajos con `timeout-minutes`. Confirmed 2026-10.
 - [ffmpeg.wasm] ffprobe sale con -1 aunque funcione: se juzga por su salida JSON. Confirmed 2026-10.
 - [ffmpeg.wasm] El nivel de registro es global a la instancia (un `-v error` previo oculta loudnorm, silencedetect y progreso): cada orden fija `-loglevel`. Confirmed 2026-10.
 - [ffmpeg.wasm] Tras un `exec` fallido la instancia queda rota (`Aborted()`): se desecha y se carga otra. Confirmed 2026-10.
