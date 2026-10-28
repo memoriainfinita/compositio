@@ -38,6 +38,19 @@ function wavSeconds(bytes: Buffer): number {
 }
 
 async function open(page: Page) {
+  // Web Audio's way out goes through a silent gain: the tests play the mix, nobody hears it.
+  await page.addInitScript(() => {
+    const connect = AudioNode.prototype.connect as (this: AudioNode, ...a: unknown[]) => unknown;
+    AudioNode.prototype.connect = function (this: AudioNode, dest: unknown, ...rest: unknown[]) {
+      if (dest instanceof AudioDestinationNode) {
+        const mute = this.context.createGain();
+        mute.gain.value = 0;
+        connect.call(mute, dest);
+        return connect.call(this, mute, ...rest);
+      }
+      return connect.call(this, dest, ...rest);
+    } as typeof AudioNode.prototype.connect;
+  });
   await page.goto('./');
   await page.waitForFunction(() => self.crossOriginIsolated && document.documentElement.dataset.app === 'ready', null, { timeout: 20000 });
 }
@@ -143,6 +156,72 @@ test('saves the times as CSV and generates a matched MP3', async ({ page }) => {
   expect(bytes.subarray(0, 3).toString() === 'ID3' || (bytes[0] === 0xff && (bytes[1]! & 0xe0) === 0xe0)).toBe(true);
 });
 
+test('plays the mix, seeks with the ruler, and the fades follow while it plays', { tag: '@a11y' }, async ({ page }) => {
+  await filled(page);
+  const transport = mix(page).locator('.mix-transport');
+  const ruler = mix(page).getByRole('slider', { name: 'Posición en la mezcla' });
+  // a.wav 0-20, b.wav 14-34, c.wav 28-48: at 15 s, 1 s into the first 6 s cross.
+  await ruler.focus();
+  await page.keyboard.press('ArrowRight');
+  await page.keyboard.press('ArrowRight');
+  await page.keyboard.press('ArrowRight');
+  await expect(transport).toHaveAttribute('data-time', '15.00');
+  await expect(transport).toHaveAttribute('data-gains', '0:0.833 1:0.167');
+  await expect(ruler).toHaveAttribute('aria-valuetext', '0:15.000');
+
+  // The mix's fade in, heard as soon as it changes.
+  await page.keyboard.press('Home');
+  await expect(transport).toHaveAttribute('data-gains', '0:1.000');
+  await mix(page).getByLabel('Fundido de inicio').fill('10');
+  await mix(page).getByLabel('Fundido de inicio').press('Tab');
+  await ruler.focus();
+  await page.keyboard.press('ArrowRight');
+  await expect(transport).toHaveAttribute('data-gains', '0:0.500');
+  await expectAccessible(page);
+
+  // Playing from 10 s goes through the cross into b.wav, with an element per clip heard.
+  await page.keyboard.press('ArrowRight');
+  await mix(page).getByRole('button', { name: 'Reproducir la mezcla' }).click();
+  await expect(mix(page).getByRole('button', { name: 'Pausar la mezcla' })).toBeVisible();
+  await expect(transport).toHaveAttribute('data-voices', '1', { timeout: 10000 });
+  await expect(transport).toHaveAttribute('data-gains', /^0:\S+ 1:\S+$/, { timeout: 10000 });
+  await expect(transport).toHaveAttribute('data-voices', '2', { timeout: 5000 });
+  await expect(mix(page).locator('.mix-track .mix-item').nth(1)).toHaveClass(/playing/, { timeout: 10000 });
+  await mix(page).getByRole('button', { name: 'Pausar la mezcla' }).click();
+  await expect(transport).toHaveAttribute('data-voices', '0');
+  const paused = Number(await transport.getAttribute('data-time'));
+  expect(paused).toBeGreaterThan(14);
+
+  // Space plays from a clip too, and the editor playing pauses the mix.
+  await mix(page).locator('.mix-clip').first().focus();
+  await page.keyboard.press('Space');
+  await expect(mix(page).getByRole('button', { name: 'Pausar la mezcla' })).toBeVisible();
+  await page.getByRole('region', { name: 'Editor' }).getByRole('button', { name: 'Reproducir' }).click();
+  await expect(mix(page).getByRole('button', { name: 'Reproducir la mezcla' })).toBeVisible();
+});
+
+test('zooms the strip with the buttons and with Ctrl and the wheel', async ({ page }) => {
+  await filled(page);
+  const ruler = mix(page).getByRole('slider', { name: 'Posición en la mezcla' });
+  // The width the mix takes at this zoom; the ruler itself is never narrower than the panel.
+  const width = () => ruler.evaluate((el: HTMLElement) => parseFloat(el.style.width));
+  const whole = await width();
+  await expect(mix(page).getByRole('button', { name: 'Ver toda la mezcla' })).toBeDisabled();
+  await mix(page).getByRole('button', { name: 'Acercar la mezcla' }).click();
+  await expect.poll(width).toBeCloseTo(whole * 2, 0);
+  await mix(page).getByRole('button', { name: 'Ver toda la mezcla' }).click();
+  await expect.poll(width).toBeCloseTo(whole, 0);
+
+  const box = (await mix(page).locator('.mix-strip').boundingBox())!;
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+  await page.keyboard.down('Control');
+  await page.mouse.wheel(0, -100);
+  await page.keyboard.up('Control');
+  await expect.poll(width).toBeGreaterThan(whole * 1.2);
+  // The strip scrolls now, and the time under the pointer stays near it.
+  expect(await mix(page).locator('.mix-strip').evaluate((el) => el.scrollLeft)).toBeGreaterThan(0);
+});
+
 test.describe('phone', () => {
   test.use({ viewport: { width: 390, height: 844 } });
 
@@ -153,6 +232,10 @@ test.describe('phone', () => {
     await expect(page.getByRole('button', { name: 'Añadir selección' })).toBeEnabled({ timeout: 30000 });
     await page.getByRole('button', { name: 'Añadir selección' }).click();
     await expect(mix(page).locator('.mix-clip-name')).toHaveText(['a.wav', 'b.wav', 'c.wav']);
+    const position = mix(page).getByRole('slider', { name: 'Posición en la mezcla' });
+    await position.fill('30');
+    await expect(mix(page).locator('.mix-transport')).toHaveAttribute('data-time', '30.00');
+    await expect(mix(page).locator('.mix-item').nth(2)).toHaveClass(/playing/);
     await mix(page).getByRole('button', { name: 'Transición: 6 s' }).first().click();
     await expect(page.getByRole('dialog', { name: 'Transición' })).toBeVisible();
     await page.keyboard.press('Escape');

@@ -4,7 +4,7 @@
 
 import type { Silences } from '../model/edits.ts';
 import type { MediaInfo } from '../model/media.ts';
-import { detectSilences, listenCopy, measureFile, mixFiles, previewTransition, probeFile, processFile, type ListenFormat, type MixInput, type Processed } from './jobs.ts';
+import { detectSilences, listenCopy, measureFile, measureMix, mixFiles, previewTransition, probeFile, processFile, type ListenFormat, type MixInput, type Processed } from './jobs.ts';
 import type { Measurement, PlanInput } from '../model/operations.ts';
 import type { Transition } from '../model/timeline.ts';
 import { computePeaks, type Peaks } from './peaks.ts';
@@ -33,6 +33,8 @@ export interface Engine {
   listen(file: File, info: MediaInfo, track: number, format: ListenFormat): Promise<Blob>;
   process(label: string, file: File, input: Omit<PlanInput, 'inputPath' | 'outputPath'>): { id: string; result: Promise<Processed> };
   mix(label: string, input: MixInput): { id: string; result: Promise<Processed> };
+  /** Matching's gains by clip id, in dB, for listening to the mix; measurements land in `input.measured`. */
+  measureMix(input: MixInput): Promise<Map<string, number>>;
   /** One transition with some context; the caller cancels it by id when a newer one is asked for. */
   preview(input: MixInput & { transition: Transition }): { id: string; result: Promise<{ blob: Blob; crossAt: number }> };
   dispose(): void;
@@ -56,6 +58,7 @@ export function createEngine(
     listen: (file, info, track, format) => queue.add(file.name, (o) => listenCopy(runner, file, info, track, format, o), 'view').result,
     process: (label, file, input) => queue.add(label, (o) => processFile(runner, file, input, o)),
     mix: (label, input) => queue.add(label, (o) => mixFiles(runner, input, o)),
+    measureMix: (input) => queue.add('', (o) => measureMix(runner, input, o), 'view').result,
     preview: (input) => queue.add(input.files[1]?.name ?? '', (o) => previewTransition(runner, input, o), 'view'),
     dispose() {
       wakeLock.dispose();

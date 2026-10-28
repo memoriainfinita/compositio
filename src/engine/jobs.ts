@@ -142,6 +142,14 @@ async function gainsFor(
   return gains;
 }
 
+/** Only the measuring pass of matching, so the mix can be heard at the levels it will have. */
+export async function measureMix(runner: Runner, input: MixInput, options: RunOptions = {}): Promise<Map<string, number>> {
+  const sources = input.clips.map(sourceOf);
+  const bad = sources.find((s): s is { error: MixError } => 'error' in s);
+  if (bad) throw new EngineError('invalid-input', bad.error);
+  return gainsFor(runner, input, sources as Source[], options);
+}
+
 export async function mixFiles(runner: Runner, input: MixInput, { signal, onProgress }: RunOptions = {}): Promise<Processed> {
   const out = 'mix';
   const p = mixPlan(input.clips, input.mix, input.files.map((f, i) => inputPath(i, f)), outputPath(out));

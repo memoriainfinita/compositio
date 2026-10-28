@@ -7,7 +7,8 @@ import { gainAt, type Preview } from './preview.ts';
 export type Side = 'a' | 'b';
 
 let shared: AudioContext | null = null;
-const context = (): AudioContext | null => {
+/** One context for the page: the editor and the mix play through it. */
+export const context = (): AudioContext | null => {
   if (!shared && typeof AudioContext === 'function') shared = new AudioContext();
   return shared;
 };

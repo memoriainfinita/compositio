@@ -1,10 +1,11 @@
 // The mix as the interface sees it: its clips with what the session knows of their files, whether
 // it can be generated, and the jobs that generate it or let one transition be heard.
 
+import { signal } from '@preact/signals';
 import type { Engine, MixInput } from '../engine/index.ts';
 import type { Measurement } from '../model/operations.ts';
 import { keptRange, rangeLength } from '../model/edits.ts';
-import { lengthsOf, wavBytes, WAV_MEMORY_LIMIT, type MixClip } from '../model/mix.ts';
+import { lengthsOf, matchGain, measureKeyOf, sourceOf, wavBytes, WAV_MEMORY_LIMIT, type MixClip } from '../model/mix.ts';
 import { stem } from '../model/naming.ts';
 import type { Project } from '../model/project.ts';
 import { effectiveSettings } from '../model/settings.ts';
@@ -90,6 +91,41 @@ export function preview(engine: Pick<Engine, 'preview'>, project: Project, files
   const at = all.clips.findIndex((c) => c.clip.id === project.clips[index]?.id);
   if (at < 1) return null;
   return engine.preview({ ...all, clips: all.clips.slice(at - 1, at + 1), files: all.files.slice(at - 1, at + 1), transition });
+}
+
+/** Bumped when a measurement for listening lands, so the mix's gains are read again. */
+const measuredTick = signal(0);
+const asking = new WeakMap<Files, Set<string>>();
+
+/**
+ * Matching's gains by clip id in dB for listening to the mix; null while some clip is not measured.
+ * The first call for a set of clips asks the engine for what is missing.
+ */
+export function liveGains(engine: Pick<Engine, 'measureMix'> | null, project: Project, files: Files): Map<string, number> | null {
+  void measuredTick.value;
+  const all = input(project, files);
+  const gains = new Map<string, number>();
+  const missing: string[] = [];
+  for (const c of all.clips) {
+    const s = sourceOf(c);
+    if ('error' in s) continue;
+    const key = measureKeyOf(c.clip.fileId, s);
+    const m = all.measured.get(key);
+    if (m) gains.set(c.clip.id, matchGain(m, project.mix.matchLufs));
+    else missing.push(key);
+  }
+  if (missing.length === 0) return gains;
+  const asked = asking.get(files) ?? new Set<string>();
+  asking.set(files, asked);
+  const want = missing.join('|');
+  if (engine && !asked.has(want)) {
+    asked.add(want);
+    engine.measureMix(all).then(
+      () => measuredTick.value++,
+      () => asked.delete(want),
+    );
+  }
+  return null;
 }
 
 export function times(project: Project, layout: Layout): string {

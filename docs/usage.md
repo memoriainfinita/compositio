@@ -33,6 +33,9 @@ Everything happens in the browser: files are read where they are and never uploa
 - Drag a track to reorder it, or press Alt+arrows on it; Delete takes it out
 - Drag the overlap at the start of a track to change its crossfade, or use the arrows on it; press it to open the transition
 - The transition popup sets duration, curve and dry cut, and «Listen» plays about 20 s around the cross
+- «Play the mix» plays it from the files with its fades, crossfades and loudness matching; changes are heard while it plays. Space plays and pauses anywhere in the mix but a field. Sample rate and MP3 are only heard in the generated mix
+- The ruler over the strip moves the playhead: press or drag on it, or use the arrows (5 s, Shift 30 s), Home and End
+- Zoom the strip with its buttons, Ctrl and the wheel, or two fingers on the ruler; on phones a position slider takes its place
 - Below the strip: default crossfade, fade in and out of the whole mix, loudness matching with its target, WAV or MP3, 44.1 or 48 kHz
 - «Times CSV» saves the start of each track; «Generate mix» downloads the mix
 

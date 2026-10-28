@@ -1,9 +1,10 @@
-// The mix («Definitivo», «Tableta», «MovilMezcla», «MovilOpcionesMezcla»): its clips over the
-// timeline with draggable overlaps, the mix options, the times and «Generar».
+// The mix («Definitivo», «Tableta», «MovilMezcla», «MovilOpcionesMezcla»): listening to it, its
+// clips over the timeline with a ruler, zoom and draggable overlaps, the mix options, the times
+// and «Generar».
 
-import { useSignal } from '@preact/signals';
+import { useSignal, type Signal } from '@preact/signals';
 import type { ComponentChildren } from 'preact';
-import { useEffect, useRef, useState } from 'preact/hooks';
+import { useEffect, useLayoutEffect, useRef } from 'preact/hooks';
 import Sortable from 'sortablejs';
 import { blocker, generate, memoryRisk, saveTimes, stripLayout } from '../../app/mix.ts';
 import { useApp, type AppState } from '../../app/state.ts';
@@ -16,6 +17,7 @@ import { announce } from '../layout.ts';
 import { Dialog } from '../Dialog.tsx';
 import { montageDialog } from '../Montages.tsx';
 import { NumberField } from '../output/Inspector.tsx';
+import { MixTransport, Playhead, Ruler, useMixPlayback, type Playback, type Zoom } from './Playback.tsx';
 import { MAX_TRANSITION, seconds, TransitionDialog } from './Transition.tsx';
 
 const nameOf = (p: Project, clip: Clip): string => p.files.find((f) => f.id === clip.fileId)?.name ?? '';
@@ -189,25 +191,60 @@ function Thumb({ fileId }: { fileId: string }) {
   );
 }
 
-function Strip({ layout, onOpen }: { layout: Layout; onOpen(index: number): void }) {
+/** The most the strip zooms in, in pixels per second. */
+const MAX_PPS = 100;
+
+/** Pixels per second that fit the whole mix in the panel; very long ones scroll, never under 2. */
+const fitPps = (width: number, duration: number): number => Math.max(2, (width - 8) / Math.max(1, duration));
+
+function Strip({ layout, onOpen, pb, zoom, width }: { layout: Layout; onOpen(index: number): void; pb: Playback; zoom: Zoom; width: Signal<number> }) {
   const app = useApp();
   const { project, files } = app;
   const box = useRef<HTMLDivElement>(null);
   const list = useRef<HTMLOListElement>(null);
-  const [width, setWidth] = useState(0);
   useSortable(list, app);
   useEffect(() => {
     const el = box.current;
     if (!el) return;
-    const ro = new ResizeObserver(() => setWidth(el.clientWidth));
+    const ro = new ResizeObserver(() => (width.value = el.clientWidth));
     ro.observe(el);
     return () => ro.disconnect();
   }, []);
   const p = project.value;
-  // The whole mix fits the panel; very long ones scroll, never under 2 px per second.
-  const pps = Math.max(2, (width - 8) / Math.max(1, layout.duration));
+  const pps = fitPps(width.value, layout.duration) * zoom.value.value;
+
+  // A zoom keeps a time under the same pixel: the pointer's for Ctrl+wheel and pinch, else the
+  // playhead when it is in sight, else the middle.
+  const anchor = useRef<number | null>(null);
+  const last = useRef(pps);
+  useLayoutEffect(() => {
+    const el = box.current;
+    const old = last.current;
+    last.current = pps;
+    if (!el || old === pps) return;
+    const now = pb.time.peek();
+    const seen = now * old >= el.scrollLeft && now * old <= el.scrollLeft + el.clientWidth;
+    const at = anchor.current ?? (seen ? now : (el.scrollLeft + el.clientWidth / 2) / old);
+    anchor.current = null;
+    el.scrollLeft = at * pps - (at * old - el.scrollLeft);
+  }, [pps]);
+  const zoomBy = (factor: number, at: number) => {
+    anchor.current = at;
+    zoom.value.value = Math.min(zoom.max, Math.max(1, zoom.value.peek() * factor));
+  };
+
   return (
-    <div ref={box} class="mix-strip">
+    <div
+      ref={box}
+      class="mix-strip"
+      onWheel={(e) => {
+        if (!e.ctrlKey) return;
+        e.preventDefault();
+        const r = e.currentTarget.getBoundingClientRect();
+        zoomBy(e.deltaY < 0 ? 1.25 : 0.8, (e.clientX - r.left + e.currentTarget.scrollLeft) / pps);
+      }}
+    >
+      <Ruler pb={pb} pps={pps} duration={layout.duration} onZoom={zoomBy} />
       <ol ref={list} class="mix-track" aria-labelledby="mix-title">
         {p.clips.map((clip, i) => {
           const placed = layout.placed[i];
@@ -221,7 +258,7 @@ function Strip({ layout, onOpen }: { layout: Layout; onOpen(index: number): void
           return (
             <li
               key={clip.id}
-              class={`mix-item${active ? ' active' : ''}${here ? '' : ' missing'}${cut ? ' cut' : ''}`}
+              class={`mix-item${active ? ' active' : ''}${here ? '' : ' missing'}${cut ? ' cut' : ''}${pb.current.value === i ? ' playing' : ''}`}
               style={{ width: `${Math.max(48, len * pps)}px`, marginLeft: i === 0 ? '0' : cut ? '4px' : `${-overlap * pps}px`, zIndex: i + 1 }}
             >
               <button
@@ -248,12 +285,13 @@ function Strip({ layout, onOpen }: { layout: Layout; onOpen(index: number): void
           );
         })}
       </ol>
+      <Playhead pb={pb} pps={pps} box={box} />
     </div>
   );
 }
 
 /** Phones: a vertical list with grips; between clips, the transition opens its popup. */
-function MobileList({ layout, onOpen }: { layout: Layout; onOpen(index: number): void }) {
+function MobileList({ layout, onOpen, pb }: { layout: Layout; onOpen(index: number): void; pb: Playback }) {
   const app = useApp();
   const { project, files } = app;
   const list = useRef<HTMLOListElement>(null);
@@ -267,7 +305,7 @@ function MobileList({ layout, onOpen }: { layout: Layout; onOpen(index: number):
         const name = nameOf(p, clip);
         const tr = transitionOf(clip, p.mix);
         return (
-          <li key={clip.id} class={`mix-item${here ? '' : ' missing'}`}>
+          <li key={clip.id} class={`mix-item${here ? '' : ' missing'}${pb.current.value === i ? ' playing' : ''}`}>
             {i > 0 && (
               <button type="button" class="mix-chip mono" aria-label={`${t('transition.title')}: ${tr.cut ? t('transition.cut') : seconds(placed?.overlapIn ?? 0)}`} onClick={() => onOpen(i)}>
                 {tr.cut ? t('transition.cut') : seconds(placed?.overlapIn ?? 0)}
@@ -401,15 +439,28 @@ export function MixPanel({ compact }: { compact?: boolean }) {
   const layout = stripLayout(p, app.files);
   const open = useSignal<number | null>(null);
   const options = useSignal(false);
+  const pb = useMixPlayback();
+  const width = useSignal(0);
+  const zoomed = useSignal(1);
+  const zoom: Zoom = { value: zoomed, max: Math.max(1, MAX_PPS / fitPps(width.value, layout.duration)) };
+  // Space plays the mix from anywhere in its panel but a field, as in the editor.
+  const keys = (e: KeyboardEvent) => {
+    if (e.key !== ' ' || e.defaultPrevented || e.ctrlKey || e.metaKey || e.altKey) return;
+    if (e.target instanceof HTMLElement && e.target.closest('input, select, textarea, dialog')) return;
+    if (pb.missing || pb.live.duration === 0) return;
+    e.preventDefault();
+    pb.toggle();
+  };
   return (
-    <section class={`card mix${compact ? ' compact' : ''}`} aria-labelledby="mix-title">
+    <section class={`card mix${compact ? ' compact' : ''}`} aria-labelledby="mix-title" onKeyDown={keys}>
       <MixHead layout={layout} />
+      {p.clips.length > 0 && <MixTransport pb={pb} total={layout.duration} zoom={compact ? undefined : zoom} compact={compact} />}
       {p.clips.length === 0 ? (
         <p class="empty">{t('mix.empty')}</p>
       ) : compact ? (
-        <MobileList layout={layout} onOpen={(i) => (open.value = i)} />
+        <MobileList layout={layout} onOpen={(i) => (open.value = i)} pb={pb} />
       ) : (
-        <Strip layout={layout} onOpen={(i) => (open.value = i)} />
+        <Strip layout={layout} onOpen={(i) => (open.value = i)} pb={pb} zoom={zoom} width={width} />
       )}
       <MemoryAlert layout={layout} />
       {compact ? (
