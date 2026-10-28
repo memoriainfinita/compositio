@@ -82,5 +82,6 @@ Web estática en GitHub Pages, en PC y móvil, para preparar audio y vídeo de e
 
 - [ ] Paso 1 en el Xiaomi (`spikes/` con `?run=all` por `adb reverse tcp:4173`)
 - [ ] Revisión de los pasos 6 a 11 por el usuario
+- [ ] CI en rojo (2026-10-28): «the queue cancels and retries» (`e2e/output.spec.ts`) falla en tema claro también al reintentar; el botón «Cancelar» de `dos.wav` se recrea («element was detached from the DOM») y el clic agota 120 s. En tema oscuro ya pasa tras limitar los avisos de progreso a 10 por segundo. Siguiente: mirar la traza de la ejecución 40608620023 (artefacto `playwright-traces`); si no aclara, marcarla como intermitente. La web está publicada con 7360daf
 - [ ] e2e intermitentes por tiempo en la batería completa (ver Status): repetir cuando vuelva a fallar y medir la carga del motor tras axe
 - [ ] Fase 1 según `docs/plan-2026-10-27.md`; queda del paso 12 fijar la primera versión (0.1.0) tras la revisión del usuario
