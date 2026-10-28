@@ -9,7 +9,7 @@ Prepare audio and video for live shows in the browser. Everything runs on your d
 
 **Live:** https://memoriainfinita.github.io/compositio/
 
-**Status:** phase 1 complete, first version not released yet. How to use it: [docs/usage.md](docs/usage.md). What each browser can do: [docs/browsers.md](docs/browsers.md).
+**Status:** version 0.1.0, the first one ([changelog](CHANGELOG.md)). How to use it: [docs/usage.md](docs/usage.md). What each browser can do: [docs/browsers.md](docs/browsers.md).
 
 ![compositio on a phone, dark theme: the mix tab with five tracks, their start times and crossfades, and the position slider](docs/compositio-demo.png)
 
