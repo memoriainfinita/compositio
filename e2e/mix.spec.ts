@@ -236,6 +236,12 @@ test.describe('phone', () => {
     await position.fill('30');
     await expect(mix(page).locator('.mix-transport')).toHaveAttribute('data-time', '30.00');
     await expect(mix(page).locator('.mix-item').nth(2)).toHaveClass(/playing/);
+    // On a short screen the mix scrolls under the tabs, which stay at the foot.
+    await page.setViewportSize({ width: 390, height: 500 });
+    const fit = () => page.evaluate(() => [document.documentElement.scrollHeight, Math.round(document.querySelector('.bottom-nav')!.getBoundingClientRect().bottom), innerHeight]);
+    await expect.poll(fit).toEqual([500, 500, 500]);
+    expect(await page.locator('.center').evaluate((c) => c.scrollHeight > c.clientHeight)).toBe(true);
+    await page.setViewportSize({ width: 390, height: 844 });
     await mix(page).getByRole('button', { name: 'Transición: 6 s' }).first().click();
     await expect(page.getByRole('dialog', { name: 'Transición' })).toBeVisible();
     await page.keyboard.press('Escape');

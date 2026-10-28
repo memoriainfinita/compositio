@@ -11,7 +11,7 @@ Prepare audio and video for live shows in the browser. Everything runs on your d
 
 **Status:** phase 1 complete, first version not released yet. How to use it: [docs/usage.md](docs/usage.md). What each browser can do: [docs/browsers.md](docs/browsers.md).
 
-![compositio on a phone, dark theme: six WAV files with their durations, four of them in the batch, and an alert about a text file that was not added](docs/compositio-demo.png)
+![compositio on a phone, dark theme: the mix tab with five tracks, their start times and crossfades, and the position slider](docs/compositio-demo.png)
 
 ## Files
 
@@ -56,7 +56,7 @@ Prepare audio and video for live shows in the browser. Everything runs on your d
 - «Try an example» with three sample tracks
 - About, with the licences and the code of compositio, ffmpeg.wasm and FFmpeg, and a button that copies the technical details for an issue
 
-![compositio on desktop, light theme: the file list with the active file, its technical line in the editor, and the five output steps](docs/compositio-desktop.png)
+![compositio on desktop, light theme: the file list, the editor with the waveform of the active file, the mix strip with five tracks under its ruler and playhead, and the output steps](docs/compositio-desktop.png)
 
 ## Limits
 

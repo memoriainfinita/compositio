@@ -232,6 +232,9 @@ main:focus {
     'center' 1fr
     'nav' auto
     / minmax(0, 1fr);
+  /* The tabs stay at the foot of the screen; the content scrolls above them. */
+  height: 100vh;
+  height: 100dvh;
 }
 
 .files-column {

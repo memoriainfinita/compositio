@@ -86,6 +86,7 @@ Web estática en GitHub Pages, en PC y móvil, para preparar audio y vídeo de e
 - [ ] Paso 1 en el Xiaomi (`spikes/` con `?run=all` por `adb reverse tcp:4173`)
 - [ ] Revisión de los pasos 6 a 11 por el usuario
 - [ ] Revisión por el usuario de la escucha y el zoom de la mezcla
+- [ ] Hallazgos del usuario (2026-10-28), diseño propuesto sin aprobar: acciones rápidas fuera de la columna de archivos (escritorio y pestaña Archivos), solo en Inicio; bitrate del origen en la línea técnica del editor (solo formatos con pérdida); fundidos de archivo y de mezcla dibujados en la tira; A/B pasa a «Resultado» / «Original», con Resultado por defecto
 - [ ] Página en blanco en el navegador integrado (Chromium) tras reconstruir con `vite preview` en marcha: el service worker antiguo sirve su `index.html`, `fetch` del JS antiguo da 200 desde su caché, pero importarlo como módulo falla («MIME text/html»). Sin investigar; comprobar si pasa también tras un despliegue en Pages con la app abierta
 - [ ] e2e intermitentes por tiempo en la batería completa (ver Status): repetir cuando vuelva a fallar y medir la carga del motor tras axe
 - [ ] Fase 1 según `docs/plan-2026-10-27.md`; queda del paso 12 fijar la primera versión (0.1.0) tras la revisión del usuario
