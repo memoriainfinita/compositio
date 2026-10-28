@@ -44,6 +44,8 @@ export interface Queue {
 
 let counter = 0;
 
+const PROGRESS_EVERY_MS = 100;
+
 export function createQueue(onBusyChange: (busy: boolean) => void = () => {}): Queue {
   const entries: Entry<unknown>[] = [];
   const listeners = new Set<(jobs: JobView[]) => void>();
@@ -78,9 +80,15 @@ export function createQueue(onBusyChange: (busy: boolean) => void = () => {}): Q
     delete entry.view.error;
     delete entry.view.detail;
     emit();
+    // ffmpeg reports many times a second; the interface hears of it ten times a second at most,
+    // so a long job never keeps the page busy redrawing. Status changes are always told.
+    let told = 0;
     const onProgress = (ratio: number) => {
       if (running !== entry) return;
       entry.view.progress = ratio;
+      const now = Date.now();
+      if (now - told < PROGRESS_EVERY_MS) return;
+      told = now;
       emit();
     };
     entry
