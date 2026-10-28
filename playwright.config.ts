@@ -17,7 +17,7 @@ export default defineConfig({
   projects: [
     { name: 'app', testMatch: /(service-worker|ui|files|editor|output|mix|montages|pwa)\.spec\.ts/, use: { ...firefox(), locale: 'es-ES', baseURL: 'http://127.0.0.1:4174/' } },
     // The interface again in the light theme.
-    { name: 'app-light', testMatch: /(ui|files|editor|output|mix|montages|pwa)\.spec\.ts/, use: { ...firefox(1), locale: 'es-ES', baseURL: 'http://127.0.0.1:4174/' } },
+    { name: 'app-light', testMatch: /(ui|files|editor|output|mix|montages|pwa)\.spec\.ts/, grep: /@a11y/, use: { ...firefox(1), locale: 'es-ES', baseURL: 'http://127.0.0.1:4174/' } },
     { name: 'engine', testMatch: /engine\.spec\.ts/, use: { ...firefox(), baseURL: 'http://127.0.0.1:4176/' } },
   ],
   webServer: [

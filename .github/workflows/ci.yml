@@ -1,8 +1,11 @@
 name: ci
+# Changes to documentation alone run nothing: none of it is part of the site.
 on:
   push:
     branches: [main]
+    paths-ignore: ['**.md', 'docs/**']
   pull_request:
+    paths-ignore: ['**.md', 'docs/**']
 
 permissions:
   contents: read

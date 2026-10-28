@@ -70,7 +70,7 @@ async function expectAccessible(page: Page) {
   expect(violations.map((v) => `${v.id}: ${v.nodes.map((n) => n.target.join(' ')).join(', ')}`)).toEqual([]);
 }
 
-test('adds the selection, moves an overlap by keyboard and undoes it, and generates the WAV', async ({ page }) => {
+test('adds the selection, moves an overlap by keyboard and undoes it, and generates the WAV', { tag: '@a11y' }, async ({ page }) => {
   await filled(page);
   const overlap = mix(page).getByRole('slider', { name: 'Solape con a.wav' });
   await expect(overlap).toHaveAttribute('aria-valuetext', '6 s');
@@ -93,7 +93,7 @@ test('adds the selection, moves an overlap by keyboard and undoes it, and genera
   expect(wavSeconds(bytes)).toBeCloseTo(48, 1);
 });
 
-test('the transition popup previews the cross and applies a dry cut', async ({ page }) => {
+test('the transition popup previews the cross and applies a dry cut', { tag: '@a11y' }, async ({ page }) => {
   await filled(page);
   await mix(page).getByRole('slider', { name: 'Solape con b.wav' }).click();
   const dialog = page.getByRole('dialog', { name: 'Transición' });
@@ -146,7 +146,7 @@ test('saves the times as CSV and generates a matched MP3', async ({ page }) => {
 test.describe('phone', () => {
   test.use({ viewport: { width: 390, height: 844 } });
 
-  test('lists the clips, opens a transition and the options, and moves a clip by keyboard', async ({ page }) => {
+  test('lists the clips, opens a transition and the options, and moves a clip by keyboard', { tag: '@a11y' }, async ({ page }) => {
     await open(page);
     await threeTracks(page);
     await page.getByRole('button', { name: 'Mezcla' }).click();

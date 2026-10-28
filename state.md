@@ -44,7 +44,7 @@ Web estática en GitHub Pages, en PC y móvil, para preparar audio y vídeo de e
 - Decidido al implementar el paso 10, sin revisar por el usuario: «Nuevo montaje» y «Borrar» en `PopMontajes` (el lienzo no los tiene); «Guardar como nuevo» en el popup de guardar; un archivo quitado del proyecto sigue en la sesión y cuenta como encontrado al abrir un montaje que lo usa
 - Paso 11 hecho (2026-10-28): PWA y cierre, diseño en `docs/paso-11-diseno-2026-10-28.md` (sin revisar por el usuario). `public/manifest.webmanifest` con iconos SVG y PNG normales y `maskable` (`scripts/icons.mjs`, a mano cuando cambie el logo); compartir a la app: el service worker guarda el POST de `./share` en la caché `compositio-share` y abre `./?share` (`src/app/share.ts`); «Probar con un ejemplo» con tres acordes de 20 s en WAV que entran también en la mezcla; «Instalar» en Inicio solo con `beforeinstallprompt`; «Acerca de» con licencias, enlaces al código de compositio, ffmpeg.wasm y FFmpeg, y «Informar de un error» (copia los detalles y enlaza a una incidencia nueva); el aviso de versión nueva en móvil queda sobre la barra inferior
 - e2e: 95 en Firefox (service worker 4, interfaz 9 + archivos 7 + editor 6 + salida 8 + mezcla 5 + montajes 4 + PWA 5 en cada tema, motor 3); axe sin infracciones WCAG 2.2 AA en las tres disposiciones y los dos temas. 248 pruebas unitarias (contando cada par de contraste del tema)
-- Paso 12 (2026-10-28): batería completa 93 de 95; los dos fallos repetidos solos pasan tras arreglar el contraste de `PopReabrir` en tema claro. El otro, «a file Firefox cannot play gets a copy to listen to» (editor, tema claro), falló por tiempo: es otra intermitente. Documentación en `docs/usage.md` y `docs/browsers.md` (con `[PENDING]` en lo no probado fuera de Firefox), README al día. Sin publicar: `main` va por delante de `origin` y `package.json` sigue en 0.0.0
+- Paso 12 (2026-10-28): batería completa 93 de 95; los dos fallos repetidos solos pasan tras arreglar el contraste de `PopReabrir` en tema claro. El otro, «a file Firefox cannot play gets a copy to listen to» (editor, tema claro), falló por tiempo: es otra intermitente. Documentación en `docs/usage.md` y `docs/browsers.md` (con `[PENDING]` en lo no probado fuera de Firefox), README al día. Publicado en Pages el 2026-10-28 tras arreglar la reproducción sin dispositivo de audio; `package.json` sigue en 0.0.0
 - e2e intermitentes (2026-10-27): «a restored session…» (archivos) y las de actualización del service worker fallaron por tiempo en la batería completa; solas pasan. En la primera, el motor tardó 35-80 s en quedar listo cuando axe analizaba la página justo tras recargar, con el núcleo ya en la caché del service worker: el guardado del service worker queda descartado. Sin axe, recargar a mitad de descarga da 2-5 s. Horas después, el mismo código pasó 3 de 3, el diagnóstico 5 de 5 sin atascos y la batería completa 51 de 51. Causa sin confirmar
 
 ## Patterns
@@ -69,6 +69,9 @@ Web estática en GitHub Pages, en PC y móvil, para preparar audio y vídeo de e
 - [css] Un `select` en una rejilla `1fr` o en un flex ensancha su contenedor hasta su opción más larga: `grid-template-columns: minmax(0, 1fr)` y `flex: 1 1 0; min-width: 0`. Confirmed 2026-10.
 - [e2e] Una carpeta soltada no se puede construir desde la página: entradas con la forma de `webkitGetAsEntry` sobre un `DragEvent` con `dataTransfer` redefinido. Los File de prueba llevan `lastModified` fijo, o nunca son duplicados. Confirmed 2026-10.
 
+- [webaudio] Sin dispositivo de audio (runner de CI) `AudioContext.resume()` nunca se resuelve: reproducir sin esperarlo. Confirmed 2026-10.
+- [ci] El tema claro solo corre las e2e con etiqueta `@a11y` (las que pasan axe); un push que solo toca `.md` o `docs/` no lanza la CI. Confirmed 2026-10.
+
 ## Preferences
 
 - Firefox como navegador de pruebas
@@ -80,4 +83,4 @@ Web estática en GitHub Pages, en PC y móvil, para preparar audio y vídeo de e
 - [ ] Paso 1 en el Xiaomi (`spikes/` con `?run=all` por `adb reverse tcp:4173`)
 - [ ] Revisión de los pasos 6 a 11 por el usuario
 - [ ] e2e intermitentes por tiempo en la batería completa (ver Status): repetir cuando vuelva a fallar y medir la carga del motor tras axe
-- [ ] Fase 1 según `docs/plan-2026-10-27.md`; queda del paso 12 publicar la primera versión (tras la revisión del usuario)
+- [ ] Fase 1 según `docs/plan-2026-10-27.md`; queda del paso 12 fijar la primera versión (0.1.0) tras la revisión del usuario

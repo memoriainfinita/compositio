@@ -69,7 +69,7 @@ async function expectAccessible(page: Page) {
   expect(violations.map((v) => `${v.id}: ${v.nodes.map((n) => n.target.join(' ')).join(', ')}`)).toEqual([]);
 }
 
-test('processes one file to FLAC and downloads it directly; the result reads back as FLAC', async ({ page }) => {
+test('processes one file to FLAC and downloads it directly; the result reads back as FLAC', { tag: '@a11y' }, async ({ page }) => {
   await open(page);
   await choose(page, [{ name: 'tono.wav', buffer: wav(3) }]);
   await loaded(page, 1);
@@ -114,7 +114,7 @@ test('a batch goes as one zip with names from the pattern', async ({ page }) => 
   expect(bytes.includes(Buffer.from('02 - b.wav'))).toBe(true);
 });
 
-test('own settings carry a mark and go back to the batch', async ({ page }) => {
+test('own settings carry a mark and go back to the batch', { tag: '@a11y' }, async ({ page }) => {
   await open(page);
   await choose(page, [{ name: 'tono.wav', buffer: wav(1) }]);
   await loaded(page, 1);
@@ -155,7 +155,7 @@ test('normalizing: B sounds at the measured gain, and the result is louder', asy
   expect(Math.max(...samples.map(Math.abs))).toBeGreaterThan(6000);
 });
 
-test('presets: starters, save, rename, export, delete, import, apply', async ({ page }) => {
+test('presets: starters, save, rename, export, delete, import, apply', { tag: '@a11y' }, async ({ page }) => {
   await open(page);
   await choose(page, [{ name: 'tono.wav', buffer: wav(1) }]);
   await loaded(page, 1);
@@ -218,7 +218,7 @@ test('quick actions process the selection, and files dropped on one', async ({ p
   await expect(files(page).locator('.file-title')).toHaveText(['tono.wav', 'otro.wav']);
 });
 
-test('the queue cancels and retries', async ({ page }) => {
+test('the queue cancels and retries', { tag: '@a11y' }, async ({ page }) => {
   await open(page);
   await choose(page, [
     { name: 'uno.wav', buffer: wav(240) },
@@ -244,7 +244,7 @@ test('the queue cancels and retries', async ({ page }) => {
   await expect(dialog.locator('.job')).toHaveCount(0);
 });
 
-test('accessible on tablet and phone', async ({ page }) => {
+test('accessible on tablet and phone', { tag: '@a11y' }, async ({ page }) => {
   await open(page);
   await choose(page, [{ name: 'tono.wav', buffer: wav(1) }]);
   await loaded(page, 1);

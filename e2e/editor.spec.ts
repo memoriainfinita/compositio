@@ -99,7 +99,7 @@ async function expectAccessible(page: Page) {
   expect(violations.map((v) => `${v.id}: ${v.nodes.map((n) => n.target.join(' ')).join(', ')}`)).toEqual([]);
 }
 
-test('draws the waveform and sets the region with I, O and the arrows; undo takes it back', async ({ page }) => {
+test('draws the waveform and sets the region with I, O and the arrows; undo takes it back', { tag: '@a11y' }, async ({ page }) => {
   await open(page);
   await choose(page, 'tono.wav', wav(12));
   await ready(page);
@@ -242,7 +242,7 @@ test('a file Firefox cannot play gets a copy to listen to', async ({ page }) => 
   await expect.poll(async () => Number(await slider(page, 'Posición').getAttribute('aria-valuenow'))).toBeGreaterThan(0);
 });
 
-test('a video shows its picture over the waveform', async ({ page }) => {
+test('a video shows its picture over the waveform', { tag: '@a11y' }, async ({ page }) => {
   await open(page);
   // A short WebM with picture and sound, recorded in the page itself.
   const bytes = await page.evaluate(async () => {
@@ -280,7 +280,7 @@ test('a video shows its picture over the waveform', async ({ page }) => {
   await expectAccessible(page);
 });
 
-test('accessible on tablet and phone, with the fades folded on the phone', async ({ page }) => {
+test('accessible on tablet and phone, with the fades folded on the phone', { tag: '@a11y' }, async ({ page }) => {
   await open(page);
   await choose(page, 'tono.wav', wav(6));
   await ready(page);

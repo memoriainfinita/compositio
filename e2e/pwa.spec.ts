@@ -70,7 +70,7 @@ test('«Probar con un ejemplo» brings three tracks into the files and the mix',
   await expect(page.getByRole('region', { name: 'Mezcla' })).toContainText('3 pistas · 0:48');
 });
 
-test('«Acerca de» links to the code and copies the details for an issue', async ({ page, context }) => {
+test('«Acerca de» links to the code and copies the details for an issue', { tag: '@a11y' }, async ({ page, context }) => {
   await open(page);
   await context.grantPermissions(['clipboard-read', 'clipboard-write']).catch(() => {});
   await page.getByRole('button', { name: 'Acerca de' }).click();
@@ -90,7 +90,7 @@ test('«Acerca de» links to the code and copies the details for an issue', asyn
 test.describe('phone', () => {
   test.use({ viewport: { width: 390, height: 844 } });
 
-  test('the new-version notice stays above the bottom bar', async ({ page }) => {
+  test('the new-version notice stays above the bottom bar', { tag: '@a11y' }, async ({ page }) => {
     await open(page);
     await page.getByRole('button', { name: 'Probar con un ejemplo' }).click();
     await expect(page.locator('.bottom-nav')).toBeVisible({ timeout: 30000 });

@@ -59,7 +59,7 @@ test.describe('start screen', () => {
     expect(await page.locator('meta[http-equiv="Content-Security-Policy"]').getAttribute('content')).toContain("script-src 'self' 'wasm-unsafe-eval'");
   });
 
-  test('is accessible in this theme', async ({ page }, info) => {
+  test('is accessible in this theme', { tag: '@a11y' }, async ({ page }, info) => {
     await open(page);
     // Projects «app» and «app-light» force each theme (playwright.config.ts).
     const background = info.project.name === 'app-light' ? 'rgb(244, 245, 247)' : 'rgb(18, 20, 23)';
@@ -90,7 +90,7 @@ test.describe('start screen', () => {
 test.describe('desktop workspace', () => {
   test.use({ viewport: { width: 1440, height: 900 } });
 
-  test('shows files, editor, mix, the five output steps and the queue', async ({ page }) => {
+  test('shows files, editor, mix, the five output steps and the queue', { tag: '@a11y' }, async ({ page }) => {
     await openWorkspace(page);
     await expect(page.getByRole('heading', { level: 1, name: 'compositio' })).toBeVisible();
     await expect(page.getByText('Ensayo')).toBeVisible();
@@ -109,7 +109,7 @@ test.describe('desktop workspace', () => {
     await expectAccessible(page);
   });
 
-  test('montages popup traps focus, closes with Esc and gives the focus back', async ({ page }) => {
+  test('montages popup traps focus, closes with Esc and gives the focus back', { tag: '@a11y' }, async ({ page }) => {
     await openWorkspace(page);
     const opener = page.getByRole('button', { name: 'Abrir montaje' });
     await opener.click();
@@ -125,7 +125,7 @@ test.describe('desktop workspace', () => {
 test.describe('tablet workspace', () => {
   test.use({ viewport: { width: 820, height: 1180 } });
 
-  test('opens files in a side panel and moves through output tabs with the keyboard', async ({ page }) => {
+  test('opens files in a side panel and moves through output tabs with the keyboard', { tag: '@a11y' }, async ({ page }) => {
     await openWorkspace(page);
     await page.getByRole('button', { name: 'Archivos: 2 archivos' }).click();
     const drawer = page.getByRole('dialog', { name: 'Archivos' });
@@ -151,7 +151,7 @@ test.describe('tablet workspace', () => {
 test.describe('phone workspace', () => {
   test.use({ viewport: { width: 390, height: 844 } });
 
-  test('switches sections from the bottom bar and shows output as a sheet', async ({ page }) => {
+  test('switches sections from the bottom bar and shows output as a sheet', { tag: '@a11y' }, async ({ page }) => {
     await openWorkspace(page);
     const nav = page.getByRole('navigation', { name: 'Secciones' });
     await expect(nav.getByRole('button', { name: 'Editor' })).toHaveAttribute('aria-current', 'page');

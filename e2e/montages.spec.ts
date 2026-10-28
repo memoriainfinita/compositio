@@ -75,7 +75,7 @@ async function expectAccessible(page: Page) {
   expect(violations.map((v) => `${v.id}: ${v.nodes.map((n) => n.target.join(' ')).join(', ')}`)).toEqual([]);
 }
 
-test('saves, reopens after a reload with the files missing and pairs them when added', async ({ page }) => {
+test('saves, reopens after a reload with the files missing and pairs them when added', { tag: '@a11y' }, async ({ page }) => {
   await saved(page);
   await fresh(page);
   await page.getByRole('button', { name: 'Abrir montaje' }).click();
@@ -139,7 +139,7 @@ test('exports a montage and imports it back', async ({ page }) => {
 test.describe('phone', () => {
   test.use({ viewport: { width: 390, height: 844 } });
 
-  test('the folder opens the library and the mix options save the montage', async ({ page }) => {
+  test('the folder opens the library and the mix options save the montage', { tag: '@a11y' }, async ({ page }) => {
     await open(page);
     await choose(page, 'Elegir archivos');
     await page.getByRole('button', { name: 'Mezcla' }).click();

@@ -111,7 +111,7 @@ async function expectAccessible(page: Page) {
   expect(violations.map((v) => `${v.id}: ${v.nodes.map((n) => n.target.join(' ')).join(', ')}`)).toEqual([]);
 }
 
-test('chooses files: natural order, durations, batch, active file and its technical line', async ({ page }) => {
+test('chooses files: natural order, durations, batch, active file and its technical line', { tag: '@a11y' }, async ({ page }) => {
   await open(page);
   await choose(page, [audio('Pista 10.wav', 3), audio('Pista 2.wav', 65), audio('Pista 1.wav', 1.4)]);
   await expect(titles(page)).toHaveText(['Pista 1.wav', 'Pista 2.wav', 'Pista 10.wav'], { timeout: 30000 });
@@ -167,7 +167,7 @@ test('selection and counter, removing and undoing', async ({ page }) => {
   await expect(files(page).getByText('Falta el archivo')).toHaveCount(0);
 });
 
-test('alerts about what was not added, and they can be closed', async ({ page }) => {
+test('alerts about what was not added, and they can be closed', { tag: '@a11y' }, async ({ page }) => {
   await open(page);
   await choose(page, [audio('bien.wav', 1), { name: 'notas.txt', data: Buffer.from('hola'), type: 'text/plain' }, { name: 'roto.mp3', data: Buffer.alloc(4096, 7), type: 'audio/mpeg' }]);
   const alert = page.getByRole('alert');
@@ -186,7 +186,7 @@ test('alerts on the start screen when nothing could be added', async ({ page }) 
   await expect(page.getByRole('heading', { level: 1 })).toHaveText('Soltar audios, vídeos o una carpeta');
 });
 
-test('a restored session shows the missing file and pairs it when it is dropped', async ({ page }) => {
+test('a restored session shows the missing file and pairs it when it is dropped', { tag: '@a11y' }, async ({ page }) => {
   const obertura = audio('01 - Obertura.wav', 2);
   await open(page);
   await page.evaluate(async (size) => {
