@@ -205,9 +205,9 @@ test('fields take typed times and fades; B follows the region and the fades', as
   await expect(slider(page, 'Fundido de entrada')).toHaveAttribute('aria-valuetext', '2 s');
   await editor(page).getByRole('combobox', { name: 'Fundido de entrada: Curva' }).selectOption('qsin');
 
-  // Paused, the stage reports the gain B would apply where the playhead stands.
+  // The result is heard by default. Paused, the stage reports its gain where the playhead stands.
   const stage = editor(page).locator('.editor-stage');
-  await editor(page).getByRole('button', { name: 'B', exact: true }).click();
+  await expect(editor(page).getByRole('button', { name: 'Resultado', exact: true })).toHaveAttribute('aria-pressed', 'true');
   await expect(stage).toHaveAttribute('data-gain', '0.000');
   const position = slider(page, 'Posición');
   await position.focus();
@@ -216,12 +216,12 @@ test('fields take typed times and fades; B follows the region and the fades', as
   await page.keyboard.press('ArrowRight');
   await page.keyboard.press('ArrowRight');
   await expect(stage).toHaveAttribute('data-gain', '1.000');
-  await editor(page).getByRole('button', { name: 'A', exact: true }).click();
+  await editor(page).getByRole('button', { name: 'Original', exact: true }).click();
   await page.keyboard.press('Home');
   await expect(stage).toHaveAttribute('data-gain', '1.000');
 
-  // Playing B from before the region starts at the region.
-  await editor(page).getByRole('button', { name: 'B', exact: true }).click();
+  // Playing the result from before the region starts at the region.
+  await editor(page).getByRole('button', { name: 'Resultado', exact: true }).click();
   await position.focus();
   await page.keyboard.press('Space');
   await expect(editor(page).getByRole('button', { name: 'Pausa' })).toBeVisible();

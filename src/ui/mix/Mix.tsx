@@ -17,6 +17,7 @@ import { announce } from '../layout.ts';
 import { Dialog } from '../Dialog.tsx';
 import { montageDialog } from '../Montages.tsx';
 import { NumberField } from '../output/Inspector.tsx';
+import { fadeEnvelope, type Live } from './live.ts';
 import { MixTransport, Playhead, Ruler, useMixPlayback, type Playback, type Zoom } from './Playback.tsx';
 import { MAX_TRANSITION, seconds, TransitionDialog } from './Transition.tsx';
 
@@ -276,6 +277,7 @@ function Strip({ layout, onOpen, pb, zoom, width }: { layout: Layout; onOpen(ind
                 </span>
                 {here ? <Thumb fileId={clip.fileId} /> : <span class="file-missing">{t('mix.missing')}</span>}
               </button>
+              {here && <Fades live={pb.live} clipId={clip.id} />}
               {i > 0 && !cut && <Overlap clip={clip} prevName={nameOf(p, p.clips[i - 1]!)} overlap={overlap} pps={pps} onOpen={() => onOpen(i)} />}
               {cut && (
                 <button type="button" class="mix-cut" aria-label={t('mix.cutMark', { name })} title={t('mix.cutMark', { name })} onClick={() => onOpen(i)} />
@@ -287,6 +289,20 @@ function Strip({ layout, onOpen, pb, zoom, width }: { layout: Layout; onOpen(ind
       </ol>
       <Playhead pb={pb} pps={pps} box={box} />
     </div>
+  );
+}
+
+/** The clip's own fades and the mix's over it: shaded where they lower it, the curve on top. */
+function Fades({ live, clipId }: { live: Live; clipId: string }) {
+  const env = fadeEnvelope(live, clipId);
+  if (!env) return null;
+  const length = env.at(-1)![0];
+  const line = env.map(([x, g]) => `${x.toFixed(3)} ${(1 - g).toFixed(4)}`);
+  return (
+    <svg class="mix-fades" aria-hidden="true" viewBox={`0 0 ${length} 1`} preserveAspectRatio="none">
+      <path class="mix-fades-shade" d={`M0 0 L${line.join(' L')} L${length} 0 Z`} />
+      <path class="mix-fades-line" d={`M${line.join(' L')}`} />
+    </svg>
   );
 }
 

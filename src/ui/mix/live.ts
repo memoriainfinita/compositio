@@ -82,6 +82,27 @@ export function mixGain(live: Live, t: number): number {
   return g;
 }
 
+/**
+ * What the strip draws over a clip: the gain of its own fades and of the mix's fades, `steps + 1`
+ * points as [seconds into the clip, gain]. Crossfades and matching are left out: the overlaps show
+ * the first, the second is a level. Null when no fade touches the clip.
+ */
+export function fadeEnvelope(live: Live, clipId: string, steps = 64): [number, number][] | null {
+  const c = live.clips.find((x) => x.clipId === clipId);
+  if (!c) return null;
+  const own = c.fadeIn.duration > 0 || c.fadeOut.duration > 0;
+  const mixed = (live.fadeIn.duration > 0 && c.at < live.fadeIn.duration) || (live.fadeOut.duration > 0 && c.at + c.length > live.duration - live.fadeOut.duration);
+  if (!own && !mixed) return null;
+  const flat: LiveClip = { ...c, gain: 1, overlapIn: 0, overlapOut: 0 };
+  const out: [number, number][] = [];
+  for (let k = 0; k <= steps; k++) {
+    // The last point a hair inside the clip, where clipGain still counts it.
+    const x = Math.min((k / steps) * c.length, c.length - 1e-6);
+    out.push([x, clipGain(flat, x) * mixGain(live, c.at + x)]);
+  }
+  return out;
+}
+
 export interface Sounding {
   index: number;
   /** Where the file is at that moment, in seconds of the file. */

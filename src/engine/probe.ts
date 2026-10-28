@@ -12,6 +12,7 @@ interface ProbeStream {
   sample_rate?: string;
   bits_per_sample?: number;
   bits_per_raw_sample?: string;
+  bit_rate?: string;
   width?: number;
   height?: number;
   avg_frame_rate?: string;
@@ -24,7 +25,7 @@ interface ProbeStream {
 
 export interface ProbeJson {
   streams?: ProbeStream[];
-  format?: { format_name?: string; duration?: string; tags?: Record<string, string> };
+  format?: { format_name?: string; duration?: string; bit_rate?: string; tags?: Record<string, string> };
 }
 
 export const PROBE_ARGS = ['-v', 'error', '-show_format', '-show_streams', '-of', 'json'] as const;
@@ -69,10 +70,14 @@ export function toMediaInfo(json: ProbeJson): MediaInfo {
   let audio = 0;
   let video = 0;
   let hasCover = false;
+  // Without a rate of its own (Ogg, some VBR MP3), a file with one stream has the file's rate.
+  const alone = (json.streams ?? []).length === 1;
   for (const s of json.streams ?? []) {
     if (s.codec_type === 'audio') {
       const codec = s.codec_name ?? 'unknown';
       const bits = finite(s.bits_per_raw_sample) || s.bits_per_sample || undefined;
+      const rate = finite(s.bit_rate) ?? (alone ? finite(json.format?.bit_rate) : undefined);
+      const lossy = LOSSY_AUDIO.has(codec);
       tracks.push({
         kind: 'audio',
         index: audio++,
@@ -80,7 +85,8 @@ export function toMediaInfo(json: ProbeJson): MediaInfo {
         channels: s.channels ?? 0,
         ...(s.channel_layout ? { channelLayout: s.channel_layout } : {}),
         sampleRate: finite(s.sample_rate) ?? 0,
-        ...(bits && !LOSSY_AUDIO.has(codec) ? { bitDepth: bits } : {}),
+        ...(bits && !lossy ? { bitDepth: bits } : {}),
+        ...(rate && lossy ? { bitrate: Math.round(rate / 1000) } : {}),
       });
     } else if (s.codec_type === 'video') {
       // ffmpeg counts cover art among video streams, so the index keeps counting it.

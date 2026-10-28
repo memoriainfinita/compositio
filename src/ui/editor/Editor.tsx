@@ -1,5 +1,5 @@
 // The editor («Definitivo», «MovilEditor»): the active file's picture when it has one, its waveform
-// with the region, transport and A/B, and the fields for in, out and fades. Space plays, I and O
+// with the region, transport and «Resultado» / «Original», and the fields for in, out and fades. Space plays, I and O
 // set in and out at the playhead, anywhere in the editor but inside a field.
 
 import { useComputed, useSignal } from '@preact/signals';
@@ -81,7 +81,9 @@ function Stage({ file, info, compact }: { file: FileRef; info: MediaInfo; compac
   const view = useSignal(fit(duration));
   const time = useSignal(0);
   const playing = useSignal(false);
-  const side = useSignal<Side>('a');
+  // The result is heard by default; measuring for it waits for a play or for choosing it.
+  const side = useSignal<Side>('b');
+  const armed = useSignal(false);
   const section = useRef<HTMLDivElement>(null);
   const media = useRef<HTMLMediaElement>(null);
   const [player, setPlayer] = useState<Player | null>(null);
@@ -106,8 +108,12 @@ function Stage({ file, info, compact }: { file: FileRef; info: MediaInfo; compac
         // For tests and for whoever inspects: the gain B applies right now.
         section.current?.setAttribute('data-gain', g.toFixed(3));
       },
-      (on) => (playing.value = on),
+      (on) => {
+        playing.value = on;
+        if (on) armed.value = true;
+      },
     );
+    p.setSide(side.peek());
     setPlayer(p);
     return () => p.dispose();
   }, [src]);
@@ -122,10 +128,10 @@ function Stage({ file, info, compact }: { file: FileRef; info: MediaInfo; compac
   useEffect(() => player?.setPreview(p));
 
   useEffect(() => {
-    if (!engine || side.value !== 'b' || !settings.normalize.enabled || measured) return;
+    if (!engine || side.value !== 'b' || !armed.value || !settings.normalize.enabled || measured) return;
     const timer = setTimeout(() => wantMeasurement(files, engine, file.id, file.edits, settings), MEASURE_DELAY);
     return () => clearTimeout(timer);
-  }, [key, side.value]);
+  }, [key, side.value, armed.value]);
 
   const onPatch = (patch: Patch, group?: string) => store.run((pr) => setEdits(pr, file.id, patch), group);
   const seek = (s: number) => player?.seek(s);
@@ -183,12 +189,13 @@ function Stage({ file, info, compact }: { file: FileRef; info: MediaInfo; compac
           {timeText} / {clockTime(duration)}
         </span>
         <div class="segmented" role="group" aria-label={t('editor.compare')}>
-          {(['a', 'b'] as const).map((s) => (
+          {(['b', 'a'] as const).map((s) => (
             <button key={s} type="button" class="segment" aria-pressed={side.value === s} title={t(s === 'a' ? 'editor.aHint' : 'editor.bHint')} onClick={() => {
               side.value = s;
+              if (s === 'b') armed.value = true;
               player?.setSide(s);
             }}>
-              {s.toUpperCase()}
+              {t(s === 'a' ? 'editor.original' : 'editor.result')}
             </button>
           ))}
         </div>

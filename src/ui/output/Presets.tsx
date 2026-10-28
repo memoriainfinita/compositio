@@ -1,5 +1,5 @@
 // Presets: the picker and «Procesar» at the foot of «Salida», `PopPresets` to manage them, and the
-// quick actions, which process with a preset at once (also when files are dropped on one).
+// quick actions on «Inicio», which add files and process them with a preset at once.
 
 import { useSignal } from '@preact/signals';
 import { useState } from 'preact/hooks';
@@ -8,7 +8,7 @@ import { useApp, type AppState } from '../../app/state.ts';
 import { t } from '../../i18n/index.ts';
 import type { Preset } from '../../model/formats.ts';
 import { applyPreset } from '../../model/project.ts';
-import { dropped, takenDrops, takeIn } from '../adding.ts';
+import { chooseFiles, dropped, takenDrops, takeIn } from '../adding.ts';
 import { Dialog } from '../Dialog.tsx';
 import { announce } from '../layout.ts';
 import { save } from '../../app/output.ts';
@@ -169,25 +169,24 @@ function dropOn(app: AppState, preset: Preset) {
   };
 }
 
-/** One button per preset: processes the selection with it; files dropped on one are added and processed. */
+/** On «Inicio», one button per preset: files chosen with it or dropped on it are added and processed. */
 export function QuickActions() {
   const app = useApp();
   const list = app.presets.list.value;
   if (list.length === 0) return null;
-  // Read so the buttons follow the selection.
-  void app.files.selected.value;
-  const n = processable(app.project.value, app.files).length;
   return (
-    <div class="quick-actions" role="group" aria-label={t('quick.title')}>
+    <div class="quick-actions" role="group" aria-labelledby="quick-title">
+      <span id="quick-title" class="muted small">
+        {t('quick.title')}
+      </span>
       {list.map((p) => (
         <button
           key={p.id}
           type="button"
           class="button small-button quick"
           title={t('quick.hint', { name: p.name })}
-          // Not `disabled`: with nothing selected it still takes dropped files.
-          aria-disabled={n === 0}
-          onClick={() => n > 0 && quickAction(app, p)}
+          disabled={!app.engine}
+          onClick={() => chooseFiles(app, (ids) => quickAction(app, p, ids))}
           onDragOver={(e) => e.preventDefault()}
           onDrop={dropOn(app, p)}
         >

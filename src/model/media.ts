@@ -16,6 +16,8 @@ export interface AudioTrack {
   sampleRate: number;
   /** Bits per sample of lossless sources; absent for lossy codecs, which decode to float. */
   bitDepth?: number;
+  /** Kilobits per second of lossy sources, when the file says. */
+  bitrate?: number;
 }
 
 export interface VideoTrack {

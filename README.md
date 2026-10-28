@@ -27,19 +27,20 @@ Prepare audio and video for live shows in the browser. Everything runs on your d
 - Waveform drawn part by part, playback from the file without decoding it whole
 - In and out handles, fades with six curves, silences at the ends shaded
 - Zoom, overview strip, keyboard shortcuts (Space, I, O, arrows)
-- A/B: the original against the result in real time, before processing
+- Result and original in real time, before processing
 
 ## Output
 
 - Five steps in a fixed order: extract audio, trim, normalize (two-pass loudnorm, LUFS or peak), convert (WAV, FLAC, MP3, AAC/M4A, Opus, OGG), name and download
 - Settings for the batch or for one file, with a mark on files that have their own
 - One file downloads directly; a batch downloads file by file or as one zip
-- Presets, with import and export; presets as quick actions that process at once
+- Presets, with import and export; on the start screen, presets as quick actions that process at once
 - A queue with progress, cancel and retry
 
 ## Mix
 
-- Tracks on a strip over the timeline, reordered by dragging or with the keyboard
+- Tracks on a strip over the timeline, reordered by dragging or with the keyboard, with their fades drawn on them
+- Play the mix from the files, with a ruler, playhead and zoom
 - Overlaps dragged on the strip or set to the tenth of a second; dry cuts
 - Listen to about 20 s around a transition before generating the whole mix
 - Fade in and out, loudness matching, WAV 24-bit or MP3 320, 44.1 or 48 kHz
@@ -56,7 +57,7 @@ Prepare audio and video for live shows in the browser. Everything runs on your d
 - «Try an example» with three sample tracks
 - About, with the licences and the code of compositio, ffmpeg.wasm and FFmpeg, and a button that copies the technical details for an issue
 
-![compositio on desktop, light theme: the file list, the editor with the waveform of the active file, the mix strip with five tracks under its ruler and playhead, and the output steps](docs/compositio-desktop.png)
+![compositio on desktop, light theme: the file list, the editor with the waveform of the active file, the mix strip with five tracks and their fades under its ruler and playhead, and the output steps](docs/compositio-desktop.png)
 
 ## Limits
 

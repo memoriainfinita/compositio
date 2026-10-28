@@ -37,7 +37,7 @@ function channels(n: number, layout: string | undefined, language: Lang): string
   return layout && /^\d\.\d/.test(layout) ? layout.replace(/\(.*\)$/, '') : t('tech.channels', { n }, language);
 }
 
-/** «FLAC · 48 kHz · 24 bit · estéreo», with picture size and rate first for video. */
+/** «FLAC · 48 kHz · 24 bit · estéreo» or «MP3 · 44,1 kHz · 320 kbps · estéreo», with picture size and rate first for video. */
 export function techLine(name: string, info: MediaInfo, language: Lang = lang.value): string {
   const parts = [typeBadge(name)];
   const video = videoTracks(info)[0];
@@ -50,6 +50,7 @@ export function techLine(name: string, info: MediaInfo, language: Lang = lang.va
   if (audio) {
     if (audio.sampleRate > 0) parts.push(`${number(audio.sampleRate / 1000, language, 1)} kHz`);
     if (audio.bitDepth) parts.push(`${audio.bitDepth} bit`);
+    if (audio.bitrate) parts.push(`${audio.bitrate} kbps`);
     if (audio.channels > 0) parts.push(channels(audio.channels, audio.channelLayout, language));
   }
   return parts.join(' · ');

@@ -22,10 +22,10 @@ function start(app: AppState, ids: readonly string[], settingsFor: Parameters<ty
 export const processSelection = (app: AppState): void => start(app, processable(app.store.get(), app.files), batchSettings(app.store.get()));
 
 /**
- * A preset in place of the batch on the given files (the selection by default); each file keeps
- * its own values on top, as it would with the batch. The batch is untouched.
+ * A preset in place of the batch on the given files; each file keeps its own values on top, as it
+ * would with the batch. The batch is untouched.
  */
-export function quickAction(app: AppState, preset: Preset, ids?: readonly string[]): void {
+export function quickAction(app: AppState, preset: Preset, ids: readonly string[]): void {
   const settings: OutputSettings = preset.settings;
-  start(app, ids ?? processable(app.store.get(), app.files), (f) => effectiveSettings(settings, f.edits.own));
+  start(app, ids, (f) => effectiveSettings(settings, f.edits.own));
 }

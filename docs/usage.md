@@ -7,7 +7,7 @@ Everything happens in the browser: files are read where they are and never uploa
 - Drop audio or video files, or a folder, anywhere on the page; or press «Choose files»
 - On a phone, the system picker is the way in; on Android, files can also be shared to compositio once it is installed
 - «Try an example» adds three sample tracks
-- Each new file is analysed in the background: format, duration, and the silence at its ends (-60 dBFS)
+- Each new file is analysed in the background: format, duration, and the silence at its ends (-60 dBFS); the editor shows its technical line, with the bitrate of lossy files
 - The checkbox of a file puts it in the batch; the file you press opens in the editor
 
 ## 2. Edit a file
@@ -16,7 +16,7 @@ Everything happens in the browser: files are read where they are and never uploa
 - The handles at the top corners of the region set the fades; each fade has a curve
 - Space plays and stops; I and O set in and out at the playhead; arrows move the playhead, a handle or the whole region
 - Ctrl+wheel zooms, Shift+wheel scrolls; the strip under the waveform moves the view
-- A/B switches between the original and how the result will sound (fades, trim, normalizing)
+- «Result», heard by default, plays the file as it will come out (trim, fades, normalizing); «Original» plays it as it is
 - What you edit belongs to the file: it counts the same when the file is processed alone or inside the mix
 
 ## 3. Process
@@ -24,7 +24,7 @@ Everything happens in the browser: files are read where they are and never uploa
 - «Output» has five steps, in order: extract audio, trim, normalize, convert, name and download
 - «Batch» changes the settings of every file; «This file» gives the active file its own values, marked in the list
 - «Process N» processes the files in the batch. One file downloads directly; several download one by one or as a zip (step 5)
-- A preset replaces the batch settings; presets can be saved, renamed, exported and imported. A preset button processes the selection with it at once, and takes files dropped on it
+- A preset replaces the batch settings; presets can be saved, renamed, exported and imported. On the start page, a preset button under «Process with» adds the files chosen with it or dropped on it and processes them at once
 - The queue at the bottom shows progress; its popup cancels, retries and downloads
 
 ## 4. Mix
@@ -36,6 +36,7 @@ Everything happens in the browser: files are read where they are and never uploa
 - «Play the mix» plays it from the files with its fades, crossfades and loudness matching; changes are heard while it plays. Space plays and pauses anywhere in the mix but a field. Sample rate and MP3 are only heard in the generated mix
 - The ruler over the strip moves the playhead: press or drag on it, or use the arrows (5 s, Shift 30 s), Home and End
 - Zoom the strip with its buttons, Ctrl and the wheel, or two fingers on the ruler; on phones a position slider takes its place
+- Each track shows its own fades and the mix's fades as ramps over it
 - Below the strip: default crossfade, fade in and out of the whole mix, loudness matching with its target, WAV or MP3, 44.1 or 48 kHz
 - «Times CSV» saves the start of each track; «Generate mix» downloads the mix
 

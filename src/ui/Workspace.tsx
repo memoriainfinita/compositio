@@ -13,7 +13,7 @@ import { layout } from './layout.ts';
 import { MixPanel } from './mix/Mix.tsx';
 import { Alerts } from './Notices.tsx';
 import { Inspector } from './output/Inspector.tsx';
-import { OutputFoot, QuickActions } from './output/Presets.tsx';
+import { OutputFoot } from './output/Presets.tsx';
 import { QueueBar } from './output/Queue.tsx';
 
 function FilesPanel({ onActivate }: { onActivate?: () => void }) {
@@ -22,7 +22,6 @@ function FilesPanel({ onActivate }: { onActivate?: () => void }) {
       <h2 id="files-title" class="panel-title">
         {t('files.title')}
       </h2>
-      <QuickActions />
       <FilesHead />
       <FileList onActivate={onActivate} />
     </section>
@@ -79,7 +78,6 @@ export function Workspace() {
         </section>
         <QueueBar />
         <Dialog open={filesOpen.value} onClose={() => (filesOpen.value = false)} title={t('files.title')} variant="drawer">
-          <QuickActions />
           <FilesHead />
           <FileList />
         </Dialog>

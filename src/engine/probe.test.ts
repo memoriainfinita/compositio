@@ -20,11 +20,19 @@ describe('toMediaInfo', () => {
     });
   });
 
-  it('treats cover art as a cover, not a video track, and gives lossy audio no bit depth', () => {
+  it('treats cover art as a cover, not a video track, and gives lossy audio a bitrate, not a bit depth', () => {
     const m = info(mp3);
     expect(m.hasCover).toBe(true);
-    expect(m.tracks).toEqual([{ kind: 'audio', index: 0, codec: 'mp3', channels: 1, channelLayout: 'mono', sampleRate: 44100 }]);
+    expect(m.tracks).toEqual([{ kind: 'audio', index: 0, codec: 'mp3', channels: 1, channelLayout: 'mono', sampleRate: 44100, bitrate: 192 }]);
     expect(m.tags).toEqual({ title: 'Tono' });
+  });
+
+  it('takes the rate of the file for a lone stream without one, and gives lossless audio none', () => {
+    const lone = structuredClone(ogg) as ProbeJson;
+    delete lone.streams![0]!.bit_rate;
+    expect(info(lone).tracks[0]).toMatchObject({ bitrate: 23 });
+    expect(info(wav).tracks[0]).not.toHaveProperty('bitrate');
+    expect(info(video).tracks.filter((t) => t.kind === 'audio').map((t) => 'bitrate' in t && t.bitrate)).toEqual([70, 69]);
   });
 
   it('reads FLAC bit depth and tags in any case', () => {

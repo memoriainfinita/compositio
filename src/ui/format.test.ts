@@ -32,6 +32,8 @@ describe('format', () => {
     expect(techLine('Ensayo.mp4', video, 'es')).toBe('MP4 · 1080×1920 · 29,97 fps · 44,1 kHz · 5.1');
     const mono: MediaInfo = { ...flac, tracks: [{ kind: 'audio', index: 0, codec: 'mp3', channels: 1, sampleRate: 22050 }] };
     expect(techLine('voz.mp3', mono, 'en')).toBe('MP3 · 22.1 kHz · mono');
+    const lossy: MediaInfo = { ...flac, tracks: [{ kind: 'audio', index: 0, codec: 'mp3', channels: 2, sampleRate: 44100, bitrate: 320 }] };
+    expect(techLine('03 - Tormenta.mp3', lossy, 'es')).toBe('MP3 · 44,1 kHz · 320 kbps · estéreo');
     const quad: MediaInfo = { ...flac, tracks: [{ kind: 'audio', index: 0, codec: 'pcm_s16le', channels: 4, sampleRate: 48000, bitDepth: 16 }] };
     expect(techLine('cuatro.wav', quad, 'es')).toBe('WAV · 48 kHz · 16 bit · 4 canales');
   });

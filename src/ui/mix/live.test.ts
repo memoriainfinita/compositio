@@ -4,7 +4,7 @@ import { media } from '../../model/fixtures.ts';
 import type { MixClip } from '../../model/mix.ts';
 import { defaultSettings } from '../../model/settings.ts';
 import { defaultMix, type Clip, type MixSettings } from '../../model/timeline.ts';
-import { clipAt, livePlan, mixGain, soundingAt } from './live.ts';
+import { clipAt, fadeEnvelope, livePlan, mixGain, soundingAt } from './live.ts';
 
 const clip = (id: string, transitionIn: Clip['transitionIn'] = null): Clip => ({ id, fileId: `f-${id}`, kind: 'audio', transitionIn });
 
@@ -89,5 +89,23 @@ describe('soundingAt', () => {
     expect(soundingAt(live, -1)).toEqual([]);
     expect(soundingAt(live, 60)).toEqual([]);
     expect(clipAt(live, 60)).toBe(-1);
+  });
+});
+
+describe('fadeEnvelope', () => {
+  it('draws the file fades and the mix fades, but not the crossfades or the matching', () => {
+    const a = mc('a', { edits: { ...defaultEdits(), fadeIn: { duration: 10, curve: 'tri' } } });
+    const live = livePlan([a, mc('b'), mc('c')], mix({ matchLoudness: true, fadeOut: { duration: 10, curve: 'tri' } }), new Map([['a', -6]]));
+    const first = fadeEnvelope(live, 'a', 60)!;
+    expect(first[0]).toEqual([0, 0]);
+    expect(first[5]![1]).toBeCloseTo(0.5, 6);
+    // At 59 s, inside the crossfade into b: still 1, the overlap shows that one.
+    expect(first[59]![1]).toBe(1);
+    expect(fadeEnvelope(live, 'b')).toBeNull();
+    const last = fadeEnvelope(live, 'c', 60)!;
+    expect(last[0]![1]).toBe(1);
+    expect(last[55]![1]).toBeCloseTo(0.5, 6);
+    expect(last[60]![1]).toBeCloseTo(0, 5);
+    expect(fadeEnvelope(live, 'z')).toBeNull();
   });
 });

@@ -3,7 +3,7 @@ import { readFile } from 'node:fs/promises';
 import { expect, test, type Page } from '@playwright/test';
 
 // Step 8 on the production build: processing one file and a batch, own settings, normalizing (and
-// the editor's B with it), presets, quick actions, cancelling and retrying. Results are read back
+// the editor's result with it), presets, quick actions on «Inicio», cancelling and retrying. Results are read back
 // by the app itself: dropping one in runs ffprobe on it.
 
 const WCAG = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa'];
@@ -132,7 +132,7 @@ test('own settings carry a mark and go back to the batch', { tag: '@a11y' }, asy
   await expect(files(page).getByRole('img', { name: 'Ajustes propios' })).toBeVisible();
 });
 
-test('normalizing: B sounds at the measured gain, and the result is louder', async ({ page }) => {
+test('normalizing: the result sounds at the measured gain, and the file is louder', async ({ page }) => {
   await open(page);
   await choose(page, [{ name: 'tono.wav', buffer: wav(4) }]);
   await loaded(page, 1);
@@ -142,7 +142,7 @@ test('normalizing: B sounds at the measured gain, and the result is louder', asy
 
   const editor = page.getByRole('region', { name: 'Editor' });
   await expect(editor.locator('.wave')).toHaveAttribute('data-ready', 'true', { timeout: 30000 });
-  await editor.getByRole('button', { name: 'B', exact: true }).click();
+  await editor.getByRole('button', { name: 'Resultado', exact: true }).click();
   await editor.getByRole('slider', { name: 'Posición' }).focus();
   await page.keyboard.press('ArrowRight');
   // A 440 Hz tone at -24 dBFS RMS needs about 10 dB more to reach -14 LUFS.
@@ -196,26 +196,31 @@ test('presets: starters, save, rename, export, delete, import, apply', { tag: '@
   await expect(output(page).getByRole('combobox', { name: 'Preset' }).locator('option')).toHaveCount(8);
 });
 
-test('quick actions process the selection, and files dropped on one', async ({ page }) => {
+test('a quick action on «Inicio» processes the files chosen with it', async ({ page }) => {
   await open(page);
-  await choose(page, [{ name: 'tono.wav', buffer: wav(1) }]);
-  await loaded(page, 1);
-  const quick = files(page).getByRole('group', { name: 'Acciones rápidas' });
-  let download = page.waitForEvent('download');
+  const quick = page.getByRole('group', { name: 'Procesar con' });
+  const chooser = page.waitForEvent('filechooser');
+  const download = page.waitForEvent('download');
   await quick.getByRole('button', { name: 'MP3 320' }).click();
+  await (await chooser).setFiles([{ name: 'tono.wav', mimeType: 'audio/wav', buffer: wav(1) }]);
   expect((await download).suggestedFilename()).toBe('tono.mp3');
-  // The batch is untouched.
+  // The batch is untouched, and the workspace has no quick actions.
   await expect(output(page).getByLabel('Formato')).toHaveValue('wav');
+  await expect(files(page).locator('.file-title')).toHaveText(['tono.wav']);
+  await expect(page.getByRole('group', { name: 'Procesar con' })).toHaveCount(0);
+});
 
-  download = page.waitForEvent('download');
+test('files dropped on a quick action are added and processed with it', async ({ page }) => {
+  await open(page);
+  const download = page.waitForEvent('download');
   const payload = wav(1).toString('base64');
-  await quick.getByRole('button', { name: 'MP3 320' }).evaluate((button, bytes) => {
+  await page.getByRole('group', { name: 'Procesar con' }).getByRole('button', { name: 'MP3 320' }).evaluate((button, bytes) => {
     const data = new DataTransfer();
     data.items.add(new File([Uint8Array.from(atob(bytes), (c) => c.charCodeAt(0))], 'otro.wav', { type: 'audio/wav', lastModified: 1 }));
     for (const type of ['dragenter', 'dragover', 'drop']) button.dispatchEvent(new DragEvent(type, { dataTransfer: data, bubbles: true, cancelable: true }));
   }, payload);
   expect((await download).suggestedFilename()).toBe('otro.mp3');
-  await expect(files(page).locator('.file-title')).toHaveText(['tono.wav', 'otro.wav']);
+  await expect(files(page).locator('.file-title')).toHaveText(['otro.wav']);
 });
 
 test('the queue cancels and retries', { tag: '@a11y' }, async ({ page }) => {

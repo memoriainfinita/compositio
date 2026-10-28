@@ -26,8 +26,8 @@ export async function takeIn(app: AppState, batch: readonly Incoming[]): Promise
   return r.ids;
 }
 
-/** The system's file picker, several at a time. The only way in on phones. */
-export function chooseFiles(app: AppState): void {
+/** The system's file picker, several at a time. The only way in on phones. `then` gets the ids added. */
+export function chooseFiles(app: AppState, then?: (ids: string[]) => void): void {
   const input = document.createElement('input');
   input.type = 'file';
   input.multiple = true;
@@ -37,7 +37,7 @@ export function chooseFiles(app: AppState): void {
   input.addEventListener('change', () => {
     const files = [...(input.files ?? [])];
     done();
-    void takeIn(app, files.map((file) => ({ file, path: file.name })));
+    void takeIn(app, files.map((file) => ({ file, path: file.name }))).then((ids) => ids.length && then?.(ids));
   });
   input.addEventListener('cancel', done);
   // Some browsers only open a picker that is in the document.
