@@ -1,5 +1,5 @@
-// «Procesar»: from the selected files to queued jobs with their names, and from finished jobs to
-// downloads. One file downloads by itself; a batch downloads file by file or as one zip.
+// «Procesar»: from the selected files to queued jobs with their names, and from the results in
+// «Exportaciones» to downloads, file by file or as one zip. Nothing downloads by itself.
 
 import { downloadZip } from 'client-zip';
 import type { Engine, JobView, Processed } from '../engine/index.ts';
@@ -26,9 +26,16 @@ export interface Preparation {
   refused: { id: string; name: string; error: PlanError }[];
 }
 
-/** The ids «Procesar» takes: selected and here, in the order of the list. */
-export const processable = (project: Project, files: Files): string[] =>
-  project.files.filter((f) => files.selected.value.has(f.id) && files.sources.value.has(f.id)).map((f) => f.id);
+/**
+ * The ids «Procesar» takes: the checked ones that are here, in the order of the list; with none
+ * checked, the file in the editor. `active` says which of the two it is.
+ */
+export function processable(project: Project, files: Files): { ids: string[]; active: boolean } {
+  const ids = project.files.filter((f) => files.selected.value.has(f.id) && files.sources.value.has(f.id)).map((f) => f.id);
+  const editing = files.active.value;
+  if (ids.length || !editing || !files.sources.value.has(editing) || !project.files.some((f) => f.id === editing)) return { ids, active: false };
+  return { ids: [editing], active: true };
+}
 
 /**
  * Plans every file to know its extension, then names them all at once so that names colliding in
@@ -83,33 +90,35 @@ export async function zip(entries: readonly { name: string; blob: Blob }[]): Pro
 export type Saver = (name: string, blob: Blob) => void;
 
 /**
- * Queues one job per file. A single file, or a batch downloaded file by file, saves each result as
- * it arrives; a zip batch saves once every job has ended, with the ones that worked.
+ * Queues one job per file. The results stay with their jobs, for «Exportaciones»; the promise
+ * gives, once every job has ended, the ids of the ones that worked.
  */
-export function run(
-  engine: Pick<Engine, 'process'>,
-  files: Files,
-  project: Project,
-  items: readonly Prepared[],
-  zipName: string,
-  saver: Saver = save,
-): Promise<void> {
-  const asZip = items.length > 1 && items.some((i) => i.settings.output.zip);
+export function run(engine: Pick<Engine, 'process'>, files: Files, project: Project, items: readonly Prepared[]): Promise<string[]> {
   const jobs = items.map((item) => {
     const ref = project.files.find((f) => f.id === item.id)!;
     const input = { info: item.info, edits: ref.edits, settings: item.settings, silences: files.silences.value.get(item.id) ?? null };
-    const { result } = engine.process(item.name, item.file, input);
-    if (!asZip) result.then((r) => saver(item.name, r.blob), () => {});
+    const { id, result } = engine.process(item.name, item.file, input);
     return result.then(
-      (r) => ({ name: item.name, blob: r.blob }),
+      () => id,
       () => null,
     );
   });
-  return Promise.all(jobs).then(async (done) => {
-    const ok = done.filter((d): d is { name: string; blob: Blob } => d !== null);
-    if (asZip && ok.length) saver(zipName, await zip(ok));
-  });
+  return Promise.all(jobs).then((ids) => ids.filter((id): id is string => id !== null));
 }
+
+/**
+ * Downloads results: one alone as itself; several file by file, or as one zip when `together`.
+ * Firefox on Android keeps only the first of several downloads in a row: there they always go
+ * together.
+ */
+export async function download(entries: readonly { name: string; blob: Blob }[], zipName: string, together: boolean, saver: Saver = save): Promise<void> {
+  if (entries.length === 1) return saver(entries[0]!.name, entries[0]!.blob);
+  if (together) return saver(zipName, await zip(entries));
+  for (const e of entries) saver(e.name, e.blob);
+}
+
+/** Whether several downloads in a row reach the user here; touch-first browsers only keep the first. */
+export const separateDownloads = (): boolean => !matchMedia('(pointer: coarse)').matches;
 
 export interface QueueSummary {
   total: number;
@@ -131,6 +140,6 @@ export function summarize(jobs: readonly JobView[]): QueueSummary {
   return { total, done, failed, active, progress };
 }
 
-/** Finished results still in memory, for «Descargar todo (zip)». */
-export const finished = (jobs: readonly JobView[]): { name: string; blob: Blob }[] =>
-  jobs.flatMap((j) => (j.priority === 'user' && j.status === 'done' && j.result ? [{ name: j.label, blob: (j.result as Processed).blob }] : []));
+/** Finished results still in memory, the ones «Exportaciones» lists. */
+export const finished = (jobs: readonly JobView[]): { id: string; name: string; blob: Blob }[] =>
+  jobs.flatMap((j) => (j.priority === 'user' && j.status === 'done' && j.result ? [{ id: j.id, name: j.label, blob: (j.result as Processed).blob }] : []));

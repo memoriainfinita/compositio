@@ -3,18 +3,20 @@
 
 import { useSignal } from '@preact/signals';
 import type { JSX } from 'preact';
+import { useEffect } from 'preact/hooks';
+import { useApp } from '../app/state.ts';
 import { t, type Key } from '../i18n/index.ts';
 import { Dialog } from './Dialog.tsx';
 import { EditorPanel } from './editor/Editor.tsx';
 import { FileList, FilesHead } from './Files.tsx';
 import { Header } from './Header.tsx';
-import { ListIcon, MixIcon, SlidersIcon, WaveIcon } from './icons.tsx';
+import { DownloadIcon, ListIcon, MixIcon, SlidersIcon, WaveIcon } from './icons.tsx';
 import { layout } from './layout.ts';
 import { MixPanel } from './mix/Mix.tsx';
 import { Alerts } from './Notices.tsx';
 import { Inspector } from './output/Inspector.tsx';
 import { OutputFoot } from './output/Presets.tsx';
-import { QueueBar } from './output/Queue.tsx';
+import { ExportsPanel, QueueBar } from './output/Queue.tsx';
 
 function FilesPanel({ onActivate }: { onActivate?: () => void }) {
   return (
@@ -28,13 +30,21 @@ function FilesPanel({ onActivate }: { onActivate?: () => void }) {
   );
 }
 
-type MobileView = 'files' | 'editor' | 'mix';
+type MobileView = 'files' | 'editor' | 'mix' | 'exports';
 
 export function Workspace() {
+  const { exports } = useApp();
   const filesOpen = useSignal(false);
   const outputOpen = useSignal(false);
   const view = useSignal<MobileView>('editor');
   const current = layout.value;
+  // On phones, «Exportaciones» is a tab: a job that ends shows it, over the output sheet.
+  useEffect(() => {
+    if (current !== 'mobile' || !exports.open.value) return;
+    view.value = 'exports';
+    outputOpen.value = false;
+    exports.open.value = false;
+  }, [current, exports.open.value]);
 
   if (current === 'desktop') {
     return (
@@ -89,6 +99,7 @@ export function Workspace() {
     ['files', 'files.title', ListIcon],
     ['editor', 'editor.title', WaveIcon],
     ['mix', 'mix.title', MixIcon],
+    ['exports', 'queue.tab', DownloadIcon],
   ];
   return (
     <div class="workspace mobile">
@@ -106,6 +117,7 @@ export function Workspace() {
           </>
         )}
         {view.value === 'mix' && <MixPanel compact />}
+        {view.value === 'exports' && <ExportsPanel />}
       </main>
       <nav class="bottom-nav" aria-label={t('nav.sections')}>
         {nav.map(([id, key, Icon]) => (

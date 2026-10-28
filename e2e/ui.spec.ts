@@ -102,9 +102,9 @@ test.describe('desktop workspace', () => {
       '2 Recortar',
       '3 Normalizar',
       '4 Convertir',
-      '5 Nombre y descarga',
+      '5 Nombre',
     ]);
-    await expect(page.getByRole('contentinfo')).toContainText('Sin trabajos');
+    await expect(page.getByRole('contentinfo')).toContainText('Nada exportado');
     await expect(page.getByRole('button', { name: 'Deshacer' })).toBeDisabled();
     await expectAccessible(page);
   });
@@ -140,7 +140,7 @@ test.describe('tablet workspace', () => {
     await expect(page.getByRole('tab', { name: '2 Recortar' })).toBeFocused();
     await expect(page.getByRole('tab', { name: '2 Recortar' })).toHaveAttribute('aria-selected', 'true');
     await page.keyboard.press('End');
-    await expect(page.getByRole('tab', { name: '5 Nombre y descarga' })).toBeFocused();
+    await expect(page.getByRole('tab', { name: '5 Nombre' })).toBeFocused();
     await page.keyboard.press('ArrowRight');
     await expect(first).toBeFocused();
     await expect(page.getByRole('tabpanel', { name: '1 Extraer audio' })).toContainText('Pista de audio');
@@ -159,6 +159,8 @@ test.describe('phone workspace', () => {
     await expect(page.getByRole('main').getByRole('listitem')).toHaveCount(2);
     await nav.getByRole('button', { name: 'Mezcla' }).click();
     await expect(page.getByRole('heading', { name: 'Mezcla' })).toBeVisible();
+    await nav.getByRole('button', { name: 'Exportado' }).click();
+    await expect(page.getByRole('main')).toContainText('Nada exportado');
     await nav.getByRole('button', { name: 'Editor' }).click();
     await page.getByRole('button', { name: 'Ajustes de salida' }).click();
     await expect(page.getByRole('dialog', { name: 'Salida' }).getByRole('tab')).toHaveCount(5);

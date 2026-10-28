@@ -17,7 +17,7 @@ Prepare audio and video for live shows in the browser. Everything runs on your d
 
 - Drop files or a folder, subfolders included, anywhere on the page, or choose them with the system picker, the only way on phones
 - Each batch is read with ffprobe and added at once, in natural order (2 before 10), as one undo step
-- Checkboxes for the batch, all or none, and Remove with undo
+- Checkboxes for what to process or mix, all or none, and Remove with undo
 - The editor shows the active file's format, sample rate, bit depth and channels
 - Alerts for files over 2 GB, files that are not audio or video, and single-thread mode in browsers without multithreading
 - A restored session lists its files as missing until they are dropped again
@@ -31,15 +31,16 @@ Prepare audio and video for live shows in the browser. Everything runs on your d
 
 ## Output
 
-- Five steps in a fixed order: extract audio, trim, normalize (two-pass loudnorm, LUFS or peak), convert (WAV, FLAC, MP3, AAC/M4A, Opus, OGG), name and download
-- Settings for the batch or for one file, with a mark on files that have their own
-- One file downloads directly; a batch downloads file by file or as one zip
+- Five steps in a fixed order: extract audio, trim, normalize (two-pass loudnorm, LUFS or peak), convert (WAV, FLAC, MP3, AAC/M4A, Opus, OGG), name
+- Shared settings or settings for one file, with a mark on files that have their own
+- The checked files are processed, or the one in the editor when none is checked
 - Presets, with import and export; on the start screen, presets as quick actions that process at once
-- A queue with progress, cancel and retry
+- «Exports»: progress, cancel and retry, and the results, which wait there to be downloaded one by one, checked, or as one zip
 
 ## Mix
 
 - Tracks on a strip over the timeline, reordered by dragging or with the keyboard, with their fades drawn on them
+- On desktop, files dragged from the list into the strip, where they land
 - Play the mix from the files, with a ruler, playhead and zoom
 - Overlaps dragged on the strip or set to the tenth of a second; dry cuts
 - Listen to about 20 s around a transition before generating the whole mix

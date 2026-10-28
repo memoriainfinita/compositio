@@ -6,7 +6,8 @@ import { classify, EngineError, type EngineErrorCode, type RunOptions } from './
 export type JobStatus = 'queued' | 'running' | 'done' | 'failed' | 'cancelled';
 /**
  * `user` jobs show in the queue popup and run first. `view` ones (the active file's waveform and
- * what its B needs) and `background` ones (probe, silences) stay hidden, in that order.
+ * what its B needs) and `background` ones (probe, silences, the other waveforms) stay hidden, in
+ * that order.
  */
 export type Priority = 'user' | 'view' | 'background';
 
@@ -35,6 +36,8 @@ export interface Queue {
   cancel(id: string): void;
   /** Queues a failed or cancelled job again; its result arrives in the job's view. */
   retry(id: string): void;
+  /** Moves a queued job up to `priority`, as when the editor opens a file whose waveform waits. */
+  raise(id: string, priority: Priority): void;
   /** Forgets a finished job and its result; cancels it first if needed. */
   remove(id: string): void;
   jobs(): JobView[];
@@ -116,6 +119,7 @@ export function createQueue(onBusyChange: (busy: boolean) => void = () => {}): Q
   };
 
   const find = (id: string) => entries.find((e) => e.view.id === id);
+  const RANK: Record<Priority, number> = { user: 0, view: 1, background: 2 };
 
   return {
     add<R>(label: string, work: Work<R>, priority: Priority = 'user') {
@@ -149,6 +153,12 @@ export function createQueue(onBusyChange: (busy: boolean) => void = () => {}): Q
       e.settle = { resolve: () => {}, reject: () => {} };
       emit();
       pump();
+    },
+    raise(id, priority) {
+      const e = find(id);
+      if (!e || e.view.status !== 'queued' || RANK[priority] >= RANK[e.view.priority]) return;
+      e.view.priority = priority;
+      emit();
     },
     remove(id) {
       const e = find(id);

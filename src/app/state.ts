@@ -1,12 +1,13 @@
 // What the interface reads: the project and its history as signals, the session's files, the
 // engine and its loading, a pending update.
 
-import { signal, type ReadonlySignal, type Signal } from '@preact/signals';
+import { effect, signal, type ReadonlySignal, type Signal } from '@preact/signals';
 import { createContext } from 'preact';
 import { useContext } from 'preact/hooks';
 import type { Engine } from '../engine/index.ts';
 import type { Project } from '../model/project.ts';
 import type { Store } from '../model/store.ts';
+import { wantAllPeaks } from './editor.ts';
 import { createFiles, type Files } from './files.ts';
 import { createMontageLibrary, type MontageLibrary } from './montages.ts';
 import { createPresetStore, type PresetStore } from './presets.ts';
@@ -26,6 +27,21 @@ export interface AppState {
   engineLoad: Signal<EngineLoad>;
   /** Set when a new version waits; calling it applies the version. */
   update: Signal<(() => void) | null>;
+  exports: Exports;
+}
+
+/** «Exportaciones»: results wait there until downloaded; nothing downloads by itself. */
+export interface Exports {
+  open: Signal<boolean>;
+  /** Job ids of the finished results marked for «Descargar marcados». */
+  checked: Signal<ReadonlySet<string>>;
+}
+
+/** A job has finished: its results come checked, and «Exportaciones» opens on them. */
+export function showExports(app: Pick<AppState, 'exports'>, ids: readonly string[]): void {
+  if (!ids.length) return;
+  app.exports.checked.value = new Set(ids);
+  app.exports.open.value = true;
 }
 
 const nowhere = { put: async () => {}, remove: async () => {} };
@@ -46,7 +62,10 @@ export function createAppState(
     canUndo.value = store.canUndo();
     canRedo.value = store.canRedo();
   });
-  return { store, project, canUndo, canRedo, files, presets, montages, engine, engineLoad: signal(null), update: signal(null) };
+  // Waveforms for every file once it is read, added again or paired by a montage.
+  if (engine) effect(() => wantAllPeaks(files, engine, project.value));
+  const exports: Exports = { open: signal(false), checked: signal(new Set()) };
+  return { store, project, canUndo, canRedo, files, presets, montages, engine, engineLoad: signal(null), update: signal(null), exports };
 }
 
 export const AppContext = createContext<AppState | null>(null);

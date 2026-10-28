@@ -7,8 +7,8 @@ Everything happens in the browser: files are read where they are and never uploa
 - Drop audio or video files, or a folder, anywhere on the page; or press «Choose files»
 - On a phone, the system picker is the way in; on Android, files can also be shared to compositio once it is installed
 - «Try an example» adds three sample tracks
-- Each new file is analysed in the background: format, duration, and the silence at its ends (-60 dBFS); the editor shows its technical line, with the bitrate of lossy files
-- The checkbox of a file puts it in the batch; the file you press opens in the editor
+- Each new file is analysed in the background: format, duration, the silence at its ends (-60 dBFS) and its waveform; the editor shows its technical line, with the bitrate of lossy files. The file you open has its waveform first
+- The checkbox of a file marks it for processing and for the mix; the file you press opens in the editor
 
 ## 2. Edit a file
 
@@ -21,15 +21,17 @@ Everything happens in the browser: files are read where they are and never uploa
 
 ## 3. Process
 
-- «Output» has five steps, in order: extract audio, trim, normalize, convert, name and download
-- «Batch» changes the settings of every file; «This file» gives the active file its own values, marked in the list
-- «Process N» processes the files in the batch. One file downloads directly; several download one by one or as a zip (step 5)
-- A preset replaces the batch settings; presets can be saved, renamed, exported and imported. On the start page, a preset button under «Process with» adds the files chosen with it or dropped on it and processes them at once
-- The queue at the bottom shows progress; its popup cancels, retries and downloads
+- «Output» has five steps, in order: extract audio, trim, normalize, convert, name
+- «Shared settings» apply to every file; «This file only» gives the active file its own values, marked in the list
+- «Process N checked» processes the checked files; with none checked, «Process this file» processes the one in the editor
+- A preset replaces the shared settings; presets can be saved, renamed, exported and imported. On the start page, a preset button under «Process with» adds the files chosen with it or dropped on it and processes them at once
+- Nothing downloads by itself: results wait in «Exports», which opens when a job ends, with them checked. «Download checked» downloads them, file by file or with «As one zip»; on phones several always go as one zip, since the browser keeps only the first of several downloads in a row. Each result also has its own «Download» and «Remove»
+- «Exports» is the bar at the bottom on desktop and tablet, and a tab on phones; it also shows the progress of the jobs under way, which can be cancelled and retried. Results are kept while the page stays open
 
 ## 4. Mix
 
-- «Add selection» puts the batch files at the end of the mix
+- «Add selection» puts the checked files at the end of the mix
+- On desktop, drag a file from the list to the strip and it goes in where it lands; a checked file brings all the checked ones
 - Drag a track to reorder it, or press Alt+arrows on it; Delete takes it out
 - Drag the overlap at the start of a track to change its crossfade, or use the arrows on it; press it to open the transition
 - The transition popup sets duration, curve and dry cut, and «Listen» plays about 20 s around the cross
@@ -38,11 +40,11 @@ Everything happens in the browser: files are read where they are and never uploa
 - Zoom the strip with its buttons, Ctrl and the wheel, or two fingers on the ruler; on phones a position slider takes its place
 - Each track shows its own fades and the mix's fades as ramps over it
 - Below the strip: default crossfade, fade in and out of the whole mix, loudness matching with its target, WAV or MP3, 44.1 or 48 kHz
-- «Times CSV» saves the start of each track; «Generate mix» downloads the mix
+- «Times CSV» saves the start of each track; «Generate mix» makes the mix, which waits in «Exports»
 
 ## 5. Montages
 
-- «Save montage» keeps the work with a name: files by name and size, their edits, the mix and the batch settings. No audio is stored
+- «Save montage» keeps the work with a name: files by name and size, their edits, the mix and the shared settings. No audio is stored
 - «Open montage» lists the saved ones; opening one can be undone with Ctrl+Z
 - When a montage opens without its files, it lists the missing ones: add them and they are paired, or open without them
 - Montages export and import as `.compositio.json` files, to move them to another browser or device

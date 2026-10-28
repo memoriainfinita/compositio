@@ -44,6 +44,26 @@ describe('queue', () => {
     expect(busy).toEqual([true, false]);
   });
 
+  it('raises a queued job ahead of others, never lowers one', async () => {
+    const q = createQueue();
+    const first = gate('a');
+    const older = gate('older');
+    const later = gate('later');
+    q.add('a', first.work, 'view');
+    q.add('older', older.work, 'background');
+    const b = q.add('later', later.work, 'background');
+    q.raise(b.id, 'view');
+    q.raise(b.id, 'background');
+    expect(q.jobs()[2]!.priority).toBe('view');
+    first.release();
+    await tick();
+    expect(later.started.value).toBe(true);
+    expect(older.started.value).toBe(false);
+    later.release();
+    await tick();
+    older.release();
+  });
+
   it('cancels running and queued jobs and keeps going', async () => {
     const q = createQueue();
     const running = gate(1);

@@ -61,7 +61,8 @@ test.describe('updates', () => {
         res.writeHead(200, { 'Content-Type': types[extname(path)] ?? 'application/octet-stream', 'Cache-Control': 'no-cache' });
         res.end(body);
       } catch {
-        res.writeHead(404).end();
+        // As GitHub Pages does: what is missing comes back as a page, which a module script rejects.
+        res.writeHead(404, { 'Content-Type': 'text/html' }).end('<!doctype html><title>404</title>');
       }
     });
     await new Promise<void>((resolve) => server.listen(port, '127.0.0.1', resolve));

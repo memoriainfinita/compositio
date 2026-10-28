@@ -23,3 +23,8 @@ Más reciente arriba.
 
 **Qué cambió:** se descarta la página local con servidor Python que llamaba al ffmpeg instalado. La web pasa a ser estática en GitHub Pages y procesa en el navegador con ffmpeg.wasm.
 **Por qué:** el usuario quiere usarla en el móvil y publicarla en GitHub Pages, que no ejecuta servidor. Se aceptan los límites de ffmpeg.wasm (2 GB por archivo, memoria del navegador, más lento). Queda como opción futura un motor local opcional para trabajos grandes.
+
+### 2026-10-28 — Página en blanco tras un despliegue con la app abierta
+
+**Qué pasaba:** `vite preview` responde con `Vary: Origin`; Chromium pide el script de módulo con `Origin` y la precaché se llenó sin él, así que `caches.match` fallaba, el service worker iba a la red y recibía el `index.html` nuevo. Pages solo manda `Vary: Accept-Encoding` y no lo sufría. Firefox no lo reproduce.
+**Arreglo:** `ignoreVary: true` en las búsquedas de la app precacheada (`src/sw/sw.ts`). Comprobado en Chromium a mano; la e2e de actualización devuelve ahora el 404 en HTML, como Pages.

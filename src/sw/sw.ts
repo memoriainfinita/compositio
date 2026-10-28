@@ -65,12 +65,15 @@ async function receiveShare(request: Request): Promise<Response> {
 const storing = new Map<string, Promise<void>>();
 
 async function respond(request: Request, route: string, later: (p: Promise<unknown>) => void): Promise<Response> {
+  // The shell is cached by exact URL. Vary is ignored: with Vary: Origin (vite preview), Chromium's
+  // module requests carry an Origin the precache lacked, would miss it and get the new deploy's
+  // page from the network instead of the old script.
   if (route === 'navigation') {
-    const cached = await caches.match(scopeUrl('index.html'), { cacheName: SHELL });
+    const cached = await caches.match(scopeUrl('index.html'), { cacheName: SHELL, ignoreVary: true });
     return cached ?? fetch(request);
   }
   if (route === 'shell') {
-    return (await caches.match(request, { cacheName: SHELL })) ?? fetch(request);
+    return (await caches.match(request, { cacheName: SHELL, ignoreVary: true })) ?? fetch(request);
   }
   if (route === 'ffmpeg') {
     const cache = await caches.open(FFMPEG);

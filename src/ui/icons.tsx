@@ -38,6 +38,12 @@ export const MixIcon = () => (
   </Svg>
 );
 
+export const DownloadIcon = () => (
+  <Svg>
+    <path d="M12 4 v11 M7 10 L12 15 L17 10 M5 20 h14" />
+  </Svg>
+);
+
 export const FolderIcon = () => (
   <Svg>
     <path d="M3 7 h7 l2 2 h9 v10 H3 Z" />

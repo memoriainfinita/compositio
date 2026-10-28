@@ -77,12 +77,11 @@ const input = (project: Project, files: Files): MixInput => {
   return { clips: m.clips, files: m.files, mix: project.mix, measured: measuredFor(files) };
 };
 
-/** Queues the mix; it downloads by itself when done. */
-export function generate(engine: Pick<Engine, 'mix'>, project: Project, files: Files, saver: Saver = save): { id: string; name: string } {
+/** Queues the mix; when done, it waits in «Exportaciones» with the other results. */
+export function generate(engine: Pick<Engine, 'mix'>, project: Project, files: Files): { id: string; name: string; result: Promise<unknown> } {
   const name = mixName(project, project.mix.format);
   const { id, result } = engine.mix(name, input(project, files));
-  result.then((r) => saver(name, r.blob), () => {});
-  return { id, name };
+  return { id, name, result };
 }
 
 /** The transition into the clip at `index`, with a draft in place of the saved one. */

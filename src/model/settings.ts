@@ -63,7 +63,6 @@ const ConvertSchema = v.object({
 const OutputSchema = v.object({
   /** Tokens: {name} source name without extension, {n} position, {title}, {artist}. */
   pattern: v.optional(v.pipe(v.string(), v.minLength(1), v.maxLength(200)), '{name}'),
-  zip: v.optional(v.boolean(), false),
 });
 
 export const OutputSettingsSchema = v.object({

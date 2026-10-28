@@ -163,6 +163,7 @@ main:focus {
   display: flex;
   flex-direction: column;
   min-height: 100vh;
+  min-height: 100dvh;
 }
 
 .home-main {
@@ -206,6 +207,7 @@ main:focus {
 .workspace {
   display: grid;
   min-height: 100vh;
+  min-height: 100dvh;
 }
 
 .workspace.desktop {
@@ -215,6 +217,7 @@ main:focus {
     'queue queue queue' auto
     / 280px minmax(0, 1fr) 340px;
   height: 100vh;
+  height: 100dvh;
 }
 
 .workspace.tablet {
@@ -232,9 +235,12 @@ main:focus {
     'center' 1fr
     'nav' auto
     / minmax(0, 1fr);
-  /* The tabs stay at the foot of the screen; the content scrolls above them. */
+  /* The tabs stay at the foot of the screen; the content scrolls above them. Without the
+     workspace's 100vh floor: with a browser bar that hides on scroll, 100vh is taller than the
+     screen and pushes the tabs off it (Firefox on Android). */
   height: 100vh;
   height: 100dvh;
+  min-height: 0;
 }
 
 .files-column {
@@ -797,7 +803,7 @@ main:focus {
 .bottom-nav {
   grid-area: nav;
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   min-height: 64px;
   border-top: 1px solid var(--line);
   background: var(--bar);
@@ -854,6 +860,7 @@ main:focus {
 .dialog {
   max-width: min(560px, calc(100vw - 32px));
   max-height: calc(100vh - 32px);
+  max-height: calc(100dvh - 32px);
   padding: 0;
   border: 1px solid var(--control);
   border-radius: 12px;
@@ -872,6 +879,7 @@ main:focus {
 .dialog-drawer {
   width: min(360px, 90vw);
   height: 100vh;
+  height: 100dvh;
   max-height: none;
   margin: 0;
   border-width: 0 1px 0 0;
@@ -910,6 +918,7 @@ main:focus {
     width: 100vw;
     max-width: none;
     height: 100vh;
+    height: 100dvh;
     max-height: none;
     margin: 0;
     border: none;
@@ -1148,6 +1157,19 @@ main:focus {
   overflow-wrap: anywhere;
 }
 
+.job-check {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+/* The size or the percentage stays on one line; the name wraps instead. */
+.job-head > .small {
+  flex: none;
+  white-space: nowrap;
+}
+
 .job-progress {
   width: 100%;
   max-width: none;
@@ -1212,6 +1234,39 @@ main:focus {
 
 .mix-head .panel-title {
   margin: 0;
+}
+
+/* A file row dragged over the mix becomes a mark where it would go in. */
+.mix-track > .file-item {
+  flex: none;
+  align-self: stretch;
+  width: 4px;
+  min-width: 0;
+  padding: 0;
+  margin: 0 2px;
+  border: 0;
+  border-radius: 2px;
+  background: var(--accent);
+  overflow: hidden;
+}
+
+.mix-track > .file-item > *,
+.mix-drop > .file-item {
+  display: none;
+}
+
+.mix-empty {
+  position: relative;
+}
+
+.mix-drop {
+  position: absolute;
+  inset: 0;
+  border-radius: 6px;
+}
+
+.mix-drop:has(.file-item) {
+  outline: 2px dashed var(--accent);
 }
 
 .mix-strip {

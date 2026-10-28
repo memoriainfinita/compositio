@@ -145,8 +145,8 @@ test('selection and counter, removing and undoing', async ({ page }) => {
   await choose(page, [audio('1.wav', 1), audio('2.wav', 1), audio('3.wav', 1)]);
   await expect(titles(page)).toHaveCount(3, { timeout: 30000 });
 
-  const all = files(page).getByRole('checkbox', { name: 'Todos al lote' });
-  await files(page).getByRole('checkbox', { name: 'Incluir 2.wav en el lote' }).uncheck();
+  const all = files(page).getByRole('checkbox', { name: 'Marcar todos' });
+  await files(page).getByRole('checkbox', { name: 'Marcar 2.wav' }).uncheck();
   await expect(files(page).getByText('2 de 3')).toBeVisible();
   expect(await all.evaluate((e: HTMLInputElement) => e.indeterminate)).toBe(true);
   // A partly ticked box takes all first, then none.
@@ -157,7 +157,7 @@ test('selection and counter, removing and undoing', async ({ page }) => {
   await expect(files(page).getByRole('button', { name: 'Quitar' })).toBeDisabled();
   await all.check();
 
-  await files(page).getByRole('checkbox', { name: 'Incluir 2.wav en el lote' }).uncheck();
+  await files(page).getByRole('checkbox', { name: 'Marcar 2.wav' }).uncheck();
   await files(page).getByRole('button', { name: 'Quitar' }).click();
   await expect(titles(page)).toHaveText(['2.wav']);
   await expect(page.locator('[aria-live]')).toHaveText('2 archivos quitados');
@@ -209,7 +209,7 @@ test('a restored session shows the missing file and pairs it when it is dropped'
 
   await expect(files(page).getByText('Falta el archivo')).toBeVisible();
   await expect(files(page).locator('.file-duration')).toHaveText(['3:12']);
-  await expect(files(page).getByRole('checkbox', { name: 'Incluir 01 - Obertura.wav en el lote' })).toBeDisabled();
+  await expect(files(page).getByRole('checkbox', { name: 'Marcar 01 - Obertura.wav' })).toBeDisabled();
   await expect(files(page).getByText('0 de 1')).toBeVisible();
   await expectAccessible(page);
 

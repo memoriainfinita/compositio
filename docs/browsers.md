@@ -15,16 +15,17 @@ ffmpeg.wasm runs ffmpeg 5.1.4 compiled to WebAssembly:
 | Firefox 155, desktop | Automatic tests on every change (Playwright) |
 | Chrome | Not tested yet |
 | Safari on iOS | Not tested yet |
-| Firefox and Chrome on Android | Not tested yet |
+| Firefox 158, Android 15 (Xiaomi) | The engine checks of step 1, and processing and downloading in the app, by hand |
+| Chrome on Android | Not tested yet |
 
 ## Known differences
 
 | | Firefox | Chrome | Safari on iOS |
 |---|---|---|---|
-| Multithreading (for video) | Yes, after reloading once on the first visit | Yes on desktop (Chromium 152) | [PENDING: test] |
-| Saving | Downloads only | Downloads (a save dialog exists, unused) | Downloads behave differently |
+| Multithreading (for video) | Yes, after reloading once on the first visit; also on Android | Yes on desktop (Chromium 152) | [PENDING: test] |
+| Saving | Downloads only; on Android each asks to be confirmed, and of a batch downloaded file by file only the first arrives: the zip arrives whole, and the queue downloads the others one by one | Downloads (a save dialog exists, unused) | Downloads behave differently |
 | Install as an app | No install offer | Install offer on the start screen [PENDING: test] | No install offer |
 | Share files to compositio | [PENDING: test on Android] | Android, once installed [PENDING: test] | No |
-| Screen kept on while processing | Yes (Firefox 155) | [PENDING: test] | [PENDING: test] |
+| Screen kept on while processing | Yes (Firefox 155; Firefox 158 on Android) | [PENDING: test] | [PENDING: test] |
 
 Safari on iOS has less memory for the page than desktop browsers.

@@ -64,6 +64,15 @@ async function loaded(page: Page, n: number) {
   await expect(files(page).getByRole('status')).toHaveCount(0, { timeout: 30000 });
 }
 
+/** Results wait in «Exportaciones», which opens with them checked; this downloads the checked ones. */
+async function downloadChecked(page: Page, n = 1) {
+  const button = page.getByRole('dialog', { name: 'Exportaciones' }).getByRole('button', { name: `Descargar marcados (${n})` });
+  await button.waitFor({ timeout: 60000 });
+  const download = page.waitForEvent('download');
+  await button.click();
+  return download;
+}
+
 async function expectAccessible(page: Page) {
   const { violations } = await new AxeBuilder({ page }).withTags(WCAG).analyze();
   expect(violations.map((v) => `${v.id}: ${v.nodes.map((n) => n.target.join(' ')).join(', ')}`)).toEqual([]);
@@ -74,10 +83,10 @@ test('processes one file to FLAC and downloads it directly; the result reads bac
   await choose(page, [{ name: 'tono.wav', buffer: wav(3) }]);
   await loaded(page, 1);
   await output(page).getByLabel('Formato').selectOption('flac');
-  const download = page.waitForEvent('download');
-  await output(page).getByRole('button', { name: 'Procesar 1' }).click();
-  const d = await download;
+  await output(page).getByRole('button', { name: 'Procesar 1 marcado' }).click();
+  const d = await downloadChecked(page);
   expect(d.suggestedFilename()).toBe('tono.flac');
+  await page.keyboard.press('Escape');
   const bytes = await readFile(await d.path());
   expect(bytes.subarray(0, 4).toString()).toBe('fLaC');
 
@@ -85,11 +94,24 @@ test('processes one file to FLAC and downloads it directly; the result reads bac
   await loaded(page, 2);
   await files(page).getByRole('button', { name: 'tono.flac' }).click();
   await expect(page.getByRole('region', { name: 'Editor' })).toContainText('FLAC · 8 kHz · 24 bit · mono');
-  await expect(page.locator('.queue-bar')).toContainText('1 de 1');
+  await expect(page.locator('.queue-bar')).toContainText('1 listo');
   await expectAccessible(page);
 });
 
-test('a batch goes as one zip with names from the pattern', async ({ page }) => {
+test('with none checked, the button processes the file in the editor', async ({ page }) => {
+  await open(page);
+  await choose(page, [
+    { name: 'uno.wav', buffer: wav(1) },
+    { name: 'dos.wav', buffer: wav(1) },
+  ]);
+  await loaded(page, 2);
+  await files(page).getByRole('checkbox', { name: 'Marcar todos' }).uncheck();
+  await files(page).getByRole('button', { name: 'dos.wav' }).click();
+  await output(page).getByRole('button', { name: 'Procesar este archivo' }).click();
+  expect((await downloadChecked(page)).suggestedFilename()).toBe('dos.wav');
+});
+
+test('a batch waits in «Exportaciones» and goes as one zip, with names from the pattern', async ({ page }) => {
   await open(page);
   await choose(page, [
     { name: 'b.wav', buffer: wav(1) },
@@ -103,9 +125,11 @@ test('a batch goes as one zip with names from the pattern', async ({ page }) => 
   await output(page).getByRole('button', { name: '{name}' }).click();
   await expect(pattern).toHaveValue('{n} - {name}');
   await expect(output(page).locator('.example')).toHaveText('01 - a.wav');
-  await output(page).getByLabel('Descargar en un zip').check();
+  await output(page).getByRole('button', { name: 'Procesar 2 marcados' }).click();
+  const exports = page.getByRole('dialog', { name: 'Exportaciones' });
+  await expect(exports.getByRole('checkbox', { checked: true })).toHaveCount(2, { timeout: 60000 });
   const download = page.waitForEvent('download');
-  await output(page).getByRole('button', { name: 'Procesar 2' }).click();
+  await exports.getByRole('button', { name: 'En un zip' }).click();
   const d = await download;
   expect(d.suggestedFilename()).toBe('compositio.zip');
   const bytes = await readFile(await d.path());
@@ -118,15 +142,15 @@ test('own settings carry a mark and go back to the batch', { tag: '@a11y' }, asy
   await open(page);
   await choose(page, [{ name: 'tono.wav', buffer: wav(1) }]);
   await loaded(page, 1);
-  await output(page).getByRole('button', { name: 'Este archivo' }).click();
+  await output(page).getByRole('button', { name: 'Solo este archivo' }).click();
   await output(page).getByLabel('Formato').selectOption('mp3');
   await expect(files(page).getByRole('img', { name: 'Ajustes propios' })).toBeVisible();
-  await expect(output(page).getByRole('button', { name: 'Volver al valor del lote: Formato' })).toBeVisible();
+  await expect(output(page).getByRole('button', { name: 'Volver al valor común: Formato' })).toBeVisible();
   await expect(output(page).locator('.example')).toHaveText('tono.mp3');
   await expectAccessible(page);
-  await output(page).getByRole('button', { name: 'Volver al valor del lote: Formato' }).click();
+  await output(page).getByRole('button', { name: 'Volver al valor común: Formato' }).click();
   await expect(files(page).getByRole('img', { name: 'Ajustes propios' })).toHaveCount(0);
-  await output(page).getByRole('button', { name: 'Lote', exact: true }).click();
+  await output(page).getByRole('button', { name: 'Ajustes comunes', exact: true }).click();
   await expect(output(page).getByLabel('Formato')).toHaveValue('wav');
   await page.keyboard.press('Control+z');
   await expect(files(page).getByRole('img', { name: 'Ajustes propios' })).toBeVisible();
@@ -148,9 +172,8 @@ test('normalizing: the result sounds at the measured gain, and the file is loude
   // A 440 Hz tone at -24 dBFS RMS needs about 10 dB more to reach -14 LUFS.
   await expect.poll(async () => Number(await editor.locator('.editor-stage').getAttribute('data-gain')), { timeout: 30000 }).toBeGreaterThan(2.5);
 
-  const download = page.waitForEvent('download');
-  await output(page).getByRole('button', { name: 'Procesar 1' }).click();
-  const bytes = await readFile(await (await download).path());
+  await output(page).getByRole('button', { name: 'Procesar 1 marcado' }).click();
+  const bytes = await readFile(await (await downloadChecked(page)).path());
   const samples = new Int16Array(bytes.buffer, bytes.byteOffset + 44, 2000);
   expect(Math.max(...samples.map(Math.abs))).toBeGreaterThan(6000);
 });
@@ -167,7 +190,7 @@ test('presets: starters, save, rename, export, delete, import, apply', { tag: '@
   await output(page).getByRole('button', { name: 'Presets' }).click();
   const dialog = page.getByRole('dialog', { name: 'Presets' });
   await dialog.getByRole('textbox', { name: 'Nombre del preset nuevo' }).fill('Mío');
-  await dialog.getByRole('button', { name: 'Guardar el lote' }).click();
+  await dialog.getByRole('button', { name: 'Guardar los ajustes comunes' }).click();
   const names = dialog.getByRole('textbox', { name: 'Nombre del preset', exact: true });
   await expect(names).toHaveCount(4);
   await names.nth(3).fill('Radio');
@@ -200,10 +223,10 @@ test('a quick action on «Inicio» processes the files chosen with it', async ({
   await open(page);
   const quick = page.getByRole('group', { name: 'Procesar con' });
   const chooser = page.waitForEvent('filechooser');
-  const download = page.waitForEvent('download');
   await quick.getByRole('button', { name: 'MP3 320' }).click();
   await (await chooser).setFiles([{ name: 'tono.wav', mimeType: 'audio/wav', buffer: wav(1) }]);
-  expect((await download).suggestedFilename()).toBe('tono.mp3');
+  expect((await downloadChecked(page)).suggestedFilename()).toBe('tono.mp3');
+  await page.keyboard.press('Escape');
   // The batch is untouched, and the workspace has no quick actions.
   await expect(output(page).getByLabel('Formato')).toHaveValue('wav');
   await expect(files(page).locator('.file-title')).toHaveText(['tono.wav']);
@@ -212,18 +235,18 @@ test('a quick action on «Inicio» processes the files chosen with it', async ({
 
 test('files dropped on a quick action are added and processed with it', async ({ page }) => {
   await open(page);
-  const download = page.waitForEvent('download');
   const payload = wav(1).toString('base64');
   await page.getByRole('group', { name: 'Procesar con' }).getByRole('button', { name: 'MP3 320' }).evaluate((button, bytes) => {
     const data = new DataTransfer();
     data.items.add(new File([Uint8Array.from(atob(bytes), (c) => c.charCodeAt(0))], 'otro.wav', { type: 'audio/wav', lastModified: 1 }));
     for (const type of ['dragenter', 'dragover', 'drop']) button.dispatchEvent(new DragEvent(type, { dataTransfer: data, bubbles: true, cancelable: true }));
   }, payload);
-  expect((await download).suggestedFilename()).toBe('otro.mp3');
+  expect((await downloadChecked(page)).suggestedFilename()).toBe('otro.mp3');
+  await page.keyboard.press('Escape');
   await expect(files(page).locator('.file-title')).toHaveText(['otro.wav']);
 });
 
-test('the queue cancels and retries', { tag: '@a11y' }, async ({ page }) => {
+test('«Exportaciones» cancels and retries, and downloads each result', { tag: '@a11y' }, async ({ page }) => {
   await open(page);
   await choose(page, [
     // The batch runs in list order, natural by name: dos.wav (long) first, uno.wav waits behind it.
@@ -232,17 +255,16 @@ test('the queue cancels and retries', { tag: '@a11y' }, async ({ page }) => {
   ]);
   await loaded(page, 2);
   await output(page).getByLabel('Normalizar', { exact: true }).check();
-  await output(page).getByRole('button', { name: 'Procesar 2' }).click();
+  await output(page).getByRole('button', { name: 'Procesar 2 marcados' }).click();
   await page.locator('.queue-open').click();
-  const dialog = page.getByRole('dialog', { name: 'Cola' });
+  const dialog = page.getByRole('dialog', { name: 'Exportaciones' });
   const second = dialog.locator('.job').filter({ hasText: 'uno.wav' });
   await second.getByRole('button', { name: 'Cancelar' }).click();
   await expect(second).toContainText('Cancelado');
   await expectAccessible(page);
-  const first = page.waitForEvent('download', { timeout: 60000 });
   await second.getByRole('button', { name: 'Reintentar' }).click();
-  expect((await first).suggestedFilename()).toBe('dos.wav');
-  await expect(second).toContainText('Hecho', { timeout: 60000 });
+  // Nothing downloads by itself: each result waits with its own «Descargar».
+  await expect(second.getByRole('checkbox', { name: 'uno.wav' })).toBeVisible({ timeout: 60000 });
   const download = page.waitForEvent('download');
   await second.getByRole('button', { name: 'Descargar' }).click();
   expect((await download).suggestedFilename()).toBe('uno.wav');
@@ -255,10 +277,10 @@ test('accessible on tablet and phone', { tag: '@a11y' }, async ({ page }) => {
   await choose(page, [{ name: 'tono.wav', buffer: wav(1) }]);
   await loaded(page, 1);
   await page.setViewportSize({ width: 820, height: 1180 });
-  await expect(page.getByRole('button', { name: 'Procesar 1' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Procesar 1 marcado' })).toBeVisible();
   await expectAccessible(page);
   await page.setViewportSize({ width: 390, height: 844 });
   await page.getByRole('button', { name: 'Ajustes de salida' }).click();
-  await expect(page.getByRole('dialog', { name: 'Salida' }).getByRole('button', { name: 'Procesar 1' })).toBeVisible();
+  await expect(page.getByRole('dialog', { name: 'Salida' }).getByRole('button', { name: 'Procesar 1 marcado' })).toBeVisible();
   await expectAccessible(page);
 });

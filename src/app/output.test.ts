@@ -5,7 +5,7 @@ import { PRESETS, serializeDoc } from '../model/formats.ts';
 import { addFiles, emptyProject, setBatch, setOwn } from '../model/project.ts';
 import { createStore } from '../model/store.ts';
 import { createFiles } from './files.ts';
-import { batchSettings, finished, prepare, processable, run, summarize } from './output.ts';
+import { batchSettings, download, finished, prepare, processable, run, summarize } from './output.ts';
 import { createPresetStore, starterPresets } from './presets.ts';
 
 function setup(names: string[]) {
@@ -24,7 +24,17 @@ describe('output', () => {
     const { p, files } = setup(['a.wav', 'b.wav', 'c.wav']);
     files.selected.value = new Set(['f2', 'f0']);
     files.sources.value = new Map([...files.sources.value].filter(([id]) => id !== 'f2'));
-    expect(processable(p, files)).toEqual(['f0']);
+    expect(processable(p, files)).toEqual({ ids: ['f0'], active: false });
+  });
+
+  it('takes the file in the editor when none is checked, if it is here', () => {
+    const { p, files } = setup(['a.wav', 'b.wav']);
+    files.selected.value = new Set();
+    expect(processable(p, files)).toEqual({ ids: [], active: false });
+    files.active.value = 'f1';
+    expect(processable(p, files)).toEqual({ ids: ['f1'], active: true });
+    files.sources.value = new Map([...files.sources.value].filter(([id]) => id !== 'f1'));
+    expect(processable(p, files)).toEqual({ ids: [], active: false });
   });
 
   it('names the batch with the pattern and tells colliding names apart', () => {
@@ -49,23 +59,25 @@ describe('output', () => {
     expect(prepare(p, files, ['f0'], batchSettings(p))).toMatchObject({ items: [], refused: [{ id: 'f0', error: 'no-audio-track' }] });
   });
 
-  it('saves each result, or one zip with those that worked', async () => {
+  it('saves nothing by itself and gives the jobs that worked', async () => {
     const { p, files } = setup(['a.wav', 'b.wav']);
     const engine = {
-      process: (label: string) => ({ id: label, result: label.startsWith('b') ? Promise.reject(new Error('x')) : Promise.resolve({ blob: new Blob(['ok']), extension: 'wav', warnings: [], measurement: null }) }),
+      process: (label: string) => ({ id: `job-${label}`, result: label.startsWith('b') ? Promise.reject(new Error('x')) : Promise.resolve({ blob: new Blob(['ok']), extension: 'wav', warnings: [], measurement: null }) }),
     };
-    const saved: string[] = [];
     const items = prepare(p, files, ['f0', 'f1'], batchSettings(p)).items;
-    await run(engine, files, p, items, 'show.zip', (name) => saved.push(name));
-    await Promise.resolve();
-    expect(saved).toEqual(['a.wav']);
+    expect(await run(engine, files, p, items)).toEqual(['job-a.wav']);
+  });
 
-    const zipped = setBatch(p, 'output', { zip: true });
-    const zipItems = prepare(zipped, files, ['f0', 'f1'], batchSettings(zipped)).items;
-    const blobs: Blob[] = [];
-    await run(engine, files, zipped, zipItems, 'show.zip', (name, blob) => (saved.push(name), blobs.push(blob)));
-    expect(saved.at(-1)).toBe('show.zip');
-    expect(new TextDecoder().decode(new Uint8Array(await blobs[0]!.arrayBuffer()).slice(0, 2))).toBe('PK');
+  it('downloads one as itself, several file by file or as one zip', async () => {
+    const saved: { name: string; blob: Blob }[] = [];
+    const saver = (name: string, blob: Blob) => saved.push({ name, blob });
+    const a = { name: 'a.wav', blob: new Blob(['a']) };
+    const b = { name: 'b.wav', blob: new Blob(['b']) };
+    await download([a], 'show.zip', true, saver);
+    await download([a, b], 'show.zip', false, saver);
+    await download([a, b], 'show.zip', true, saver);
+    expect(saved.map((s) => s.name)).toEqual(['a.wav', 'a.wav', 'b.wav', 'show.zip']);
+    expect(new TextDecoder().decode(new Uint8Array(await saved[3]!.blob.arrayBuffer()).slice(0, 2))).toBe('PK');
   });
 
   it('sums up only the user’s jobs', () => {
@@ -78,7 +90,7 @@ describe('output', () => {
       progress: 0.5,
     });
     const blob = new Blob(['x']);
-    expect(finished([{ ...job('done', 1), label: 'a.wav', result: { blob } }, job('running', 0.2)])).toEqual([{ name: 'a.wav', blob }]);
+    expect(finished([{ ...job('done', 1), label: 'a.wav', result: { blob } }, job('running', 0.2)])).toEqual([{ id: 'j', name: 'a.wav', blob }]);
   });
 });
 

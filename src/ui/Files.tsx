@@ -2,6 +2,7 @@
 // the active file, removing, and the way to add more.
 
 import { useEffect, useRef } from 'preact/hooks';
+import Sortable from 'sortablejs';
 import { selectable, selectAll, toggleSelected } from '../app/files.ts';
 import { useApp } from '../app/state.ts';
 import { formatNumber, t } from '../i18n/index.ts';
@@ -11,6 +12,7 @@ import { STEPS } from '../model/settings.ts';
 import { chooseFiles } from './adding.ts';
 import { shortTime, typeBadge } from './format.ts';
 import { layout, announce } from './layout.ts';
+import { MIX_GROUP } from './mix/Mix.tsx';
 import { Analyzing } from './Notices.tsx';
 import { STEP_LABEL } from './steps.ts';
 
@@ -28,7 +30,7 @@ function FileRow({ file, onActivate }: { file: FileRef; onActivate?: () => void 
   // The saved duration only stands in until the file is here and probed.
   const duration = files.infos.value.get(file.id)?.duration ?? file.duration;
   return (
-    <li class={`file-item${active ? ' active' : ''}${here ? '' : ' missing'}`}>
+    <li class={`file-item${active ? ' active' : ''}${here ? '' : ' missing'}`} data-file={file.id} title={here && layout.value === 'desktop' ? t('files.toMix') : undefined}>
       <input
         type="checkbox"
         class="check"
@@ -62,10 +64,31 @@ function FileRow({ file, onActivate }: { file: FileRef; onActivate?: () => void 
 /** `onActivate`: on phones, choosing a file opens the editor. */
 export function FileList({ onActivate }: { onActivate?: () => void }) {
   const app = useApp();
+  const list = useRef<HTMLUListElement>(null);
+  // Rows can be dragged into the mix strip, which takes them as clips (`Mix.tsx`); the list
+  // itself never reorders.
+  useEffect(() => {
+    const el = list.current;
+    // Only on desktop are the list and the strip on screen together.
+    if (!el || layout.value !== 'desktop') return;
+    const sortable = Sortable.create(el, {
+      group: { name: MIX_GROUP, pull: 'clone', put: false },
+      sort: false,
+      draggable: '.file-item:not(.missing)',
+      forceFallback: true,
+      // A click stays a click; on touch, a short hold starts the drag so the list still scrolls.
+      fallbackTolerance: 4,
+      delay: 200,
+      delayOnTouchOnly: true,
+      filter: 'input',
+      preventOnFilter: false,
+    });
+    return () => sortable.destroy();
+  }, []);
   return (
     <>
       <Analyzing />
-      <ul class="file-list" aria-label={t('files.title')}>
+      <ul ref={list} class="file-list" aria-label={t('files.title')}>
         {app.project.value.files.map((f) => (
           <FileRow key={f.id} file={f} onActivate={onActivate} />
         ))}

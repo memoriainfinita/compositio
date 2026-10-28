@@ -78,10 +78,11 @@ export function setBatch<S extends Step>(p: Project, step: S, values: Partial<Ou
 
 export const applyPreset = (p: Project, settings: OutputSettings): Project => ({ ...p, batch: structuredClone(settings) });
 
-export function addClips(p: Project, fileIds: readonly string[], kindOf: (fileId: string) => Clip['kind'] = () => 'audio'): Project {
+/** `at`: where the new clips go in the mix; at the end when left out. */
+export function addClips(p: Project, fileIds: readonly string[], kindOf: (fileId: string) => Clip['kind'] = () => 'audio', at = p.clips.length): Project {
   const known = new Set(p.files.map((f) => f.id));
   const clips = fileIds.filter((id) => known.has(id)).map((fileId) => ({ id: newId(), fileId, kind: kindOf(fileId), transitionIn: null }));
-  return clips.length ? { ...p, clips: [...p.clips, ...clips] } : p;
+  return clips.length ? { ...p, clips: [...p.clips.slice(0, at), ...clips, ...p.clips.slice(at)] } : p;
 }
 
 export function removeClip(p: Project, clipId: string): Project {

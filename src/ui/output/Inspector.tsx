@@ -354,7 +354,6 @@ function Output({ ctx, example }: { ctx: Ctx; example: { name: string; info?: Me
           {applyPattern(pattern || '{name}', { name: example.name, n: example.n, total: example.total, title: example.info?.tags.title, artist: example.info?.tags.artist }, example.extension)}
         </p>
       )}
-      <Check ctx={ctx} step="output" name="zip" label={t('output.zip')} checked={o.zip} onChange={(zip) => ctx.set('output', { zip })} />
     </>
   );
 }

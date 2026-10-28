@@ -43,6 +43,12 @@ describe('project commands', () => {
     expect(JSON.stringify(p)).toBe(frozen);
   });
 
+  it('add clips at a place in the mix, or at the end', () => {
+    const p = addClips(addClips(withFiles(), ['a', 'a']), ['b'], undefined, 1);
+    expect(p.clips.map((c) => c.fileId)).toEqual(['a', 'b', 'a']);
+    expect(addClips(p, ['b']).clips.map((c) => c.fileId)).toEqual(['a', 'b', 'a', 'b']);
+  });
+
   it('drop the clips of removed files', () => {
     const p = addClips(withFiles(), ['a', 'b', 'a']);
     const r = removeFiles(p, ['a']);

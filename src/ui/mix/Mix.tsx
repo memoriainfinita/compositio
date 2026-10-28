@@ -7,7 +7,7 @@ import type { ComponentChildren } from 'preact';
 import { useEffect, useLayoutEffect, useRef } from 'preact/hooks';
 import Sortable from 'sortablejs';
 import { blocker, generate, memoryRisk, saveTimes, stripLayout } from '../../app/mix.ts';
-import { useApp, type AppState } from '../../app/state.ts';
+import { showExports, useApp, type AppState } from '../../app/state.ts';
 import { t } from '../../i18n/index.ts';
 import { addClips, moveClip, removeClip, setMix, setTransition, type Project } from '../../model/project.ts';
 import { transitionOf, type Clip, type Layout, type MixSettings } from '../../model/timeline.ts';
@@ -23,6 +23,31 @@ import { MAX_TRANSITION, seconds, TransitionDialog } from './Transition.tsx';
 
 const nameOf = (p: Project, clip: Clip): string => p.files.find((f) => f.id === clip.fileId)?.name ?? '';
 
+/** The SortableJS group that lets file rows be dropped in the mix. */
+export const MIX_GROUP = 'compositio-mix';
+
+const kindOf = (files: AppState['files']) => (id: string) => (files.infos.value.get(id)?.tracks.some((tr) => tr.kind === 'video') ? 'video' : 'audio');
+
+/** Adds files to the mix at `at`, or at the end, and says so. */
+function addToMix(app: AppState, ids: readonly string[], at?: number) {
+  app.store.run((p) => addClips(p, ids, kindOf(app.files), at));
+  announce(t('mix.added', { n: ids.length }));
+}
+
+/**
+ * A row dragged from the file list lands here as clips: the checked files when the row is one of
+ * them, else its file alone. The row goes back to the list; Preact keeps both lists.
+ */
+function dropFromFiles(app: AppState, e: Sortable.SortableEvent) {
+  const { item, clone, newIndex } = e;
+  clone.replaceWith(item);
+  const id = item.dataset.file;
+  if (!id) return;
+  const { files } = app;
+  const ids = files.selected.value.has(id) ? app.store.get().files.flatMap((f) => (files.selected.value.has(f.id) ? [f.id] : [])) : [id];
+  addToMix(app, ids, newIndex);
+}
+
 /** Reorders through SortableJS, then hands the DOM back to Preact and moves the clip in the model. */
 function useSortable(list: { current: HTMLElement | null }, app: AppState, handle?: string) {
   useEffect(() => {
@@ -31,11 +56,14 @@ function useSortable(list: { current: HTMLElement | null }, app: AppState, handl
     const sortable = Sortable.create(el, {
       animation: matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : 150,
       draggable: '.mix-item',
+      // Clips stay in the mix; rows from the file list come in (`FileList`).
+      group: { name: MIX_GROUP, pull: false, put: true },
       // Pointer events instead of native drag and drop: the same with mouse, pen and touch.
       forceFallback: true,
       handle,
       filter: '.mix-overlap',
       preventOnFilter: false,
+      onAdd: (e) => dropFromFiles(app, e),
       onEnd(e) {
         const { oldIndex, newIndex, item, from } = e;
         if (oldIndex === undefined || newIndex === undefined || oldIndex === newIndex) return;
@@ -76,13 +104,9 @@ function clipKeys(app: AppState, index: number) {
 
 function MixHead({ layout }: { layout: Layout }) {
   const app = useApp();
-  const { project, files, store } = app;
+  const { project, files } = app;
   const n = project.value.clips.length;
-  const add = () => {
-    const ids = project.value.files.filter((f) => files.selected.value.has(f.id)).map((f) => f.id);
-    store.run((p) => addClips(p, ids, (id) => (files.infos.value.get(id)?.tracks.some((tr) => tr.kind === 'video') ? 'video' : 'audio')));
-    announce(t('mix.added', { n: ids.length }));
-  };
+  const add = () => addToMix(app, project.value.files.filter((f) => files.selected.value.has(f.id)).map((f) => f.id));
   return (
     <div class="mix-head">
       <h2 id="mix-title" class="panel-title">
@@ -292,6 +316,20 @@ function Strip({ layout, onOpen, pb, zoom, width }: { layout: Layout; onOpen(ind
   );
 }
 
+/** No clips yet: file rows can still be dropped here, on a layer of its own over the message. */
+function EmptyMix() {
+  const app = useApp();
+  const zone = useRef<HTMLDivElement>(null);
+  // SortableJS only drops into a list with no other children, so the message stays outside it.
+  useSortable(zone, app);
+  return (
+    <div class="mix-empty">
+      <p class="empty">{t('mix.empty')}</p>
+      <div ref={zone} class="mix-drop" />
+    </div>
+  );
+}
+
 /** The clip's own fades and the mix's over it: shaded where they lower it, the curve on top. */
 function Fades({ live, clipId }: { live: Live; clipId: string }) {
   const env = fadeEnvelope(live, clipId);
@@ -429,8 +467,9 @@ function MixActions({ compact }: { compact?: boolean }) {
   const why = blocker(p, files, engine);
   const go = () => {
     if (!engine || why) return;
-    const { name } = generate(engine, app.store.get(), files);
+    const { id, name, result } = generate(engine, app.store.get(), files);
     announce(t('mix.queued', { name }));
+    result.then(() => showExports(app, [id]), () => {});
   };
   const times = () => announce(t('mix.saved', { name: saveTimes(app.store.get(), files) }));
   return (
@@ -472,7 +511,7 @@ export function MixPanel({ compact }: { compact?: boolean }) {
       <MixHead layout={layout} />
       {p.clips.length > 0 && <MixTransport pb={pb} total={layout.duration} zoom={compact ? undefined : zoom} compact={compact} />}
       {p.clips.length === 0 ? (
-        <p class="empty">{t('mix.empty')}</p>
+        <EmptyMix />
       ) : compact ? (
         <MobileList layout={layout} onOpen={(i) => (open.value = i)} pb={pb} />
       ) : (

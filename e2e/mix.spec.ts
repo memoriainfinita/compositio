@@ -78,6 +78,15 @@ async function filled(page: Page) {
   await expect(mix(page)).toContainText('3 pistas · 0:48');
 }
 
+/** A generated mix waits in «Exportaciones», which opens with it checked; this downloads it. */
+async function downloadChecked(page: Page, timeout = 60000) {
+  const button = page.getByRole('dialog', { name: 'Exportaciones' }).getByRole('button', { name: 'Descargar marcados (1)' });
+  await button.waitFor({ timeout });
+  const download = page.waitForEvent('download');
+  await button.click();
+  return download;
+}
+
 async function expectAccessible(page: Page) {
   const { violations } = await new AxeBuilder({ page }).withTags(WCAG).analyze();
   expect(violations.map((v) => `${v.id}: ${v.nodes.map((n) => n.target.join(' ')).join(', ')}`)).toEqual([]);
@@ -96,14 +105,18 @@ test('adds the selection, moves an overlap by keyboard and undoes it, and genera
   await expect(overlap).toHaveAttribute('aria-valuetext', '6 s');
   await expectAccessible(page);
 
-  const download = page.waitForEvent('download');
   await mix(page).getByRole('button', { name: 'Generar mezcla' }).click();
-  const d = await download;
+  const d = await downloadChecked(page);
   expect(d.suggestedFilename()).toBe('mezcla.wav');
   const bytes = await readFile(await d.path());
   expect(bytes.readUInt16LE(34)).toBe(24);
   expect(bytes.readUInt32LE(24)).toBe(44100);
   expect(wavSeconds(bytes)).toBeCloseTo(48, 1);
+});
+
+test('every track gets its waveform without opening its file', async ({ page }) => {
+  await filled(page);
+  await expect(mix(page).locator('svg.mix-thumb')).toHaveCount(3, { timeout: 30000 });
 });
 
 test('the transition popup previews the cross and applies a dry cut', { tag: '@a11y' }, async ({ page }) => {
@@ -138,6 +151,41 @@ test('dragging a clip reorders the mix', async ({ page }) => {
   await expect(mix(page).locator('.mix-clip-name')).toHaveText(['a.wav', 'b.wav', 'c.wav']);
 });
 
+/** Drags with the mouse in steps, as SortableJS's pointer fallback needs. */
+async function drag(page: Page, from: { x: number; y: number }, to: { x: number; y: number }) {
+  await page.mouse.move(from.x, from.y);
+  await page.mouse.down();
+  for (let i = 1; i <= 12; i++) await page.mouse.move(from.x + ((to.x - from.x) * i) / 12, from.y + ((to.y - from.y) * i) / 12);
+  // A few moves over the target: SortableJS places the row on the move after it enters a list.
+  for (let i = 1; i <= 3; i++) await page.mouse.move(to.x + i, to.y);
+  await page.mouse.up();
+}
+
+test('file rows dragged to the mix go in where they land: one, or the checked ones', async ({ page }) => {
+  await open(page);
+  await threeTracks(page);
+  await expect(page.locator('.file-title')).toHaveCount(3, { timeout: 30000 });
+  const row = (name: string) => page.locator('.file-item', { hasText: name });
+  const at = async (l: ReturnType<Page['locator']>, fx: number) => {
+    const b = (await l.boundingBox())!;
+    return { x: b.x + b.width * fx, y: b.y + b.height / 2 };
+  };
+
+  // Into the empty mix, an unchecked row alone.
+  await row('b.wav').getByRole('checkbox').uncheck();
+  await drag(page, await at(row('b.wav').locator('.file-duration'), 0.5), await at(mix(page).locator('.mix-drop'), 0.5));
+  await expect(mix(page).locator('.mix-clip-name')).toHaveText(['b.wav']);
+  // The row stays in the list, and the list keeps its order.
+  await expect(page.locator('.file-title')).toHaveText(['a.wav', 'b.wav', 'c.wav']);
+
+  // A checked row brings the checked ones, in list order, before the clip it lands on.
+  await drag(page, await at(row('c.wav').locator('.file-duration'), 0.5), await at(mix(page).locator('.mix-clip').first(), 0.1));
+  await expect(mix(page).locator('.mix-clip-name')).toHaveText(['a.wav', 'c.wav', 'b.wav']);
+  await page.keyboard.press('Control+z');
+  await expect(mix(page).locator('.mix-clip-name')).toHaveText(['b.wav']);
+  await expect(page.locator('.file-title')).toHaveText(['a.wav', 'b.wav', 'c.wav']);
+});
+
 test('saves the times as CSV and generates a matched MP3', async ({ page }) => {
   await filled(page);
   const csv = page.waitForEvent('download');
@@ -148,9 +196,8 @@ test('saves the times as CSV and generates a matched MP3', async ({ page }) => {
 
   await mix(page).getByLabel('Igualar volumen', { exact: true }).check();
   await mix(page).getByRole('button', { name: 'MP3' }).click();
-  const download = page.waitForEvent('download', { timeout: 90000 });
   await mix(page).getByRole('button', { name: 'Generar mezcla' }).click();
-  const d = await download;
+  const d = await downloadChecked(page, 90000);
   expect(d.suggestedFilename()).toBe('mezcla.mp3');
   const bytes = await readFile(await d.path());
   expect(bytes.subarray(0, 3).toString() === 'ID3' || (bytes[0] === 0xff && (bytes[1]! & 0xe0) === 0xe0)).toBe(true);
@@ -241,6 +288,8 @@ test.describe('phone', () => {
     const fit = () => page.evaluate(() => [document.documentElement.scrollHeight, Math.round(document.querySelector('.bottom-nav')!.getBoundingClientRect().bottom), innerHeight]);
     await expect.poll(fit).toEqual([500, 500, 500]);
     expect(await page.locator('.center').evaluate((c) => c.scrollHeight > c.clientHeight)).toBe(true);
+    // No floor in vh: on Android, 100vh counts the browser bar and would push the tabs off screen.
+    expect(await page.locator('.workspace').evaluate((w) => getComputedStyle(w).minHeight)).toBe('0px');
     await page.setViewportSize({ width: 390, height: 844 });
     await mix(page).getByRole('button', { name: 'Transición: 6 s' }).first().click();
     await expect(page.getByRole('dialog', { name: 'Transición' })).toBeVisible();

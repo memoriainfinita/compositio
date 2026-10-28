@@ -121,7 +121,9 @@ export function OutputFoot() {
   // Read so the count follows the selection and the files present.
   void files.selected.value;
   void files.sources.value;
-  const n = processable(project.value, files).length;
+  void files.active.value;
+  const { ids, active } = processable(project.value, files);
+  const n = ids.length;
   return (
     <div class="output-foot">
       <div class="row">
@@ -149,7 +151,7 @@ export function OutputFoot() {
         </button>
       </div>
       <button type="button" class="button primary wide" disabled={n === 0} onClick={() => processSelection(app)}>
-        {t('output.processN', { n })}
+        {active ? t('output.processActive') : n === 1 ? t('output.processOne') : t('output.processN', { n })}
       </button>
       <PopPresets open={managing.value} onClose={() => (managing.value = false)} />
     </div>
