@@ -211,6 +211,8 @@ test('a restored session shows the missing file and pairs it when it is dropped'
   await expect(files(page).locator('.file-duration')).toHaveText(['3:12']);
   await expect(files(page).getByRole('checkbox', { name: 'Marcar 01 - Obertura.wav' })).toBeDisabled();
   await expect(files(page).getByText('0 de 1')).toBeVisible();
+  // axe analysing the page while the engine loads after the reload made the load take over a minute.
+  await page.waitForFunction(() => document.documentElement.dataset.engine === 'ready', null, { timeout: 60000 });
   await expectAccessible(page);
 
   await drop(page, [obertura]);
