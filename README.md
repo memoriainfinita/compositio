@@ -9,9 +9,9 @@ Prepare audio and video for live shows in the browser. Everything runs on your d
 
 **Live:** https://memoriainfinita.github.io/compositio/
 
-**Status:** version 0.1.0, the first one ([changelog](CHANGELOG.md)). How to use it: [docs/usage.md](docs/usage.md). What each browser can do: [docs/browsers.md](docs/browsers.md).
+**Status:** version 0.1.0, the first one ([changelog](CHANGELOG.md)). How to use it: [docs/guide](docs/guide/README.md). What each browser can do: [docs/guide/browsers.md](docs/guide/browsers.md).
 
-![compositio on a phone, dark theme: the mix tab with five tracks, their start times and crossfades, and the position slider](docs/compositio-demo.png)
+![compositio on a phone, dark theme: the mix tab with five tracks, their start times and crossfades, and the position slider](docs/guide/img/compositio-demo.png)
 
 ## Files
 
@@ -58,7 +58,7 @@ Prepare audio and video for live shows in the browser. Everything runs on your d
 - «Try an example» with three sample tracks
 - About, with the licences and the code of compositio, ffmpeg.wasm and FFmpeg, and a button that copies the technical details for an issue
 
-![compositio on desktop, light theme: the file list, the editor with the waveform of the active file, the mix strip with five tracks and their fades under its ruler and playhead, and the output steps](docs/compositio-desktop.png)
+![compositio on desktop, light theme: the file list, the editor with the waveform of the active file, the mix strip with five tracks and their fades under its ruler and playhead, and the output steps](docs/guide/img/compositio-desktop.png)
 
 ## Limits
 
@@ -73,7 +73,7 @@ Dark and light themes that follow the system, Spanish and English, and layouts f
 
 ## Browsers
 
-The tests run in Firefox. Limits by browser: [docs/browsers.md](docs/browsers.md).
+The tests run in Firefox. Limits by browser: [docs/guide/browsers.md](docs/guide/browsers.md).
 
 ## Stack
 
@@ -88,6 +88,8 @@ pnpm build       # production build
 pnpm e2e         # end-to-end tests in Firefox (after build)
 pnpm lint        # eslint
 ```
+
+The screenshots of the [guide](docs/guide/README.md) come from `node scripts/screenshots.mjs`, against `pnpm preview` on port 4174. The reasons behind the decisions are in [docs/design](docs/design).
 
 ## Development
 
