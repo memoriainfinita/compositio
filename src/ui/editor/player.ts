@@ -58,7 +58,9 @@ export class Player {
       this.gain = ctx.createGain();
       this.source.connect(this.gain).connect(ctx.destination);
     }
-    if (ctx?.state === 'suspended') await ctx.resume();
+    // Not awaited: without an audio device (a server, some setups) resume never settles, and the
+    // element must play anyway.
+    if (ctx?.state === 'suspended') void ctx.resume().catch(() => {});
     if (this.side === 'b') this.intoRange();
     this.apply();
     // A source the browser cannot play rejects here; its `error` event asks for a listening copy.
