@@ -221,25 +221,26 @@ test('quick actions process the selection, and files dropped on one', async ({ p
 test('the queue cancels and retries', { tag: '@a11y' }, async ({ page }) => {
   await open(page);
   await choose(page, [
-    { name: 'uno.wav', buffer: wav(240) },
-    { name: 'dos.wav', buffer: wav(2) },
+    // The batch runs in list order, natural by name: dos.wav (long) first, uno.wav waits behind it.
+    { name: 'dos.wav', buffer: wav(240) },
+    { name: 'uno.wav', buffer: wav(2) },
   ]);
   await loaded(page, 2);
   await output(page).getByLabel('Normalizar', { exact: true }).check();
   await output(page).getByRole('button', { name: 'Procesar 2' }).click();
   await page.locator('.queue-open').click();
   const dialog = page.getByRole('dialog', { name: 'Cola' });
-  const second = dialog.locator('.job').filter({ hasText: 'dos.wav' });
+  const second = dialog.locator('.job').filter({ hasText: 'uno.wav' });
   await second.getByRole('button', { name: 'Cancelar' }).click();
   await expect(second).toContainText('Cancelado');
   await expectAccessible(page);
   const first = page.waitForEvent('download', { timeout: 60000 });
   await second.getByRole('button', { name: 'Reintentar' }).click();
-  expect((await first).suggestedFilename()).toBe('uno.wav');
+  expect((await first).suggestedFilename()).toBe('dos.wav');
   await expect(second).toContainText('Hecho', { timeout: 60000 });
   const download = page.waitForEvent('download');
   await second.getByRole('button', { name: 'Descargar' }).click();
-  expect((await download).suggestedFilename()).toBe('dos.wav');
+  expect((await download).suggestedFilename()).toBe('uno.wav');
   await dialog.getByRole('button', { name: 'Limpiar terminados' }).click();
   await expect(dialog.locator('.job')).toHaveCount(0);
 });

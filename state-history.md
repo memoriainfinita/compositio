@@ -4,6 +4,11 @@ Lo que salió de `state.md`. Se escribe solo si explica por qué las cosas son c
 
 Más reciente arriba.
 
+### 2026-10-28 — CI en rojo por el orden del lote
+
+**Qué cambió:** «the queue cancels and retries» cancela ahora el archivo corto que espera detrás del largo.
+**Por qué:** el lote se procesa en el orden de la lista (natural por nombre). La prueba cancelaba `dos.wav` (2 s), que iba primero y terminaba antes del clic; el botón desaparecía y el clic agotaba 120 s. Visto en la traza de la ejecución 40608620023: `dos.wav` descargado 30 ms después de empezar el clic.
+
 ### 2026-10-27 — La región pasa a ser del archivo
 
 **Qué cambió:** se retira la regla «la región del editor solo se aplica con un archivo seleccionado» y la casilla «Usar la región del editor» del inspector.
