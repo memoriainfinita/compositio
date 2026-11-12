@@ -4,6 +4,8 @@ A video file is processed like an audio file, with one more step for the picture
 
 ## Open a video
 
+![compositio with video: the editor with the picture and its crop over the waveform, a video mix below it, and the output steps on the right](img/video-workspace.png)
+
 Drop video files like any other. The editor shows the picture over the waveform of the sound and the technical line adds the picture's size, frame rate and codec. Playing, the in and out handles and the fades work as they do with audio; the fades also take the picture to black (see «Fades also to black» below).
 
 ## What comes out
@@ -38,6 +40,8 @@ In the editor, «Frame» saves the picture at the playhead as a PNG or a JPEG. W
 
 «Convert» has a «Video format»:
 
+![The Convert step with HAP chosen: the video format, the HAP variant and the sound's settings](img/format.png)
+
 | Format | What it is for | Sound |
 |---|---|---|
 | **H.264 (MP4)** | Playing almost anywhere: players, phones, the web. Quality as CRF (less is better) and encoder speed | AAC |
@@ -51,6 +55,8 @@ HAP is made by compositio itself, not by ffmpeg, and needs the browser to decode
 ## How long it takes
 
 Before processing, «Picture» says which engine will make the video and how long it expects it to take. When it will be several times the length of the video, a notice under «Process» lists the files.
+
+![Under Process, the notice of the files that will take several times their length, with the engine and the pace of each](img/slow.png)
 
 - **WebCodecs** is the browser's own video codec: it is the fastest and what compositio uses whenever the browser can do the job. On a desktop, 1080p H.264 takes less than the video's length
 - **ffmpeg.wasm** is the fallback, and the only way for ProRes. At 1080p it usually takes two to three times the length, and more when the video is mixed

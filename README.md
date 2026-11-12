@@ -63,6 +63,8 @@ Prepare audio and video for live shows in the browser. Everything runs on your d
 
 ![compositio on desktop, light theme: the file list, the editor with the waveform of the active file, the mix strip with five tracks and their fades under its ruler and playhead, and the output steps](docs/guide/img/compositio-desktop.png)
 
+![compositio with video, on desktop: three clips, the editor with the crop dragged on the picture, a video mix with its strip, and the output steps for a video](docs/guide/img/video-workspace.png)
+
 ## Limits
 
 ffmpeg.wasm is WebAssembly in the browser:

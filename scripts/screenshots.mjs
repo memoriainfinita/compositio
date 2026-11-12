@@ -77,12 +77,11 @@ async function addVideos(page, listed = true) {
   await page.waitForTimeout(6000);
 }
 
-const video = await open({ width: 1440, height: 900 });
+const video = await open({ width: 1440, height: 1100 });
 await addVideos(video);
 await video.getByRole('complementary', { name: 'Output' }).getByLabel('Result').selectOption('video');
 await video.getByRole('complementary', { name: 'Output' }).getByRole('checkbox', { name: 'Crop' }).check();
 await video.getByTestId('crop-rect').waitFor();
-await video.getByRole('complementary', { name: 'Output' }).screenshot({ path: `${out}picture.png` });
 await video.getByRole('region', { name: 'Editor' }).screenshot({ path: `${out}editor-video.png` });
 
 await video.getByRole('region', { name: 'Mix' }).getByRole('button', { name: 'Add selection' }).click();
@@ -92,7 +91,33 @@ const crossfade = video.getByRole('region', { name: 'Mix' }).getByLabel('Crossfa
 await crossfade.fill('1');
 await crossfade.press('Tab');
 await video.waitForTimeout(6000);
+// Tall enough for the whole mix, with its options, to be in view.
+await video.setViewportSize({ width: 1440, height: 1500 });
+await video.evaluate(() => document.querySelectorAll('*').forEach((e) => { e.scrollTop = 0; }));
 await video.getByRole('region', { name: 'Mix' }).screenshot({ path: `${out}mix-video.png` });
+await video.setViewportSize({ width: 1440, height: 1100 });
+await video.evaluate(() => document.activeElement?.blur());
+await video.evaluate(() => document.querySelectorAll('*').forEach((e) => { e.scrollTop = 0; }));
+await video.screenshot({ path: `${out}video-workspace.png` });
+
+// The output steps for a video: size, format and the notice of how long it will take.
+const panel = video.getByRole('complementary', { name: 'Output' });
+const step = (name) => panel.getByRole('heading', { name }).locator('xpath=..');
+await panel.getByLabel('Size', { exact: true }).selectOption('fit');
+await panel.getByLabel('Common sizes').selectOption({ label: /1920/ }).catch(async () => {
+  const options = await panel.getByLabel('Common sizes').locator('option').allTextContents();
+  await panel.getByLabel('Common sizes').selectOption({ label: options.find((o) => o.includes('1920')) });
+});
+await panel.getByLabel('Video format').selectOption('prores');
+await video.waitForTimeout(3000);
+// Tall enough for the whole step to clear the sticky Process bar.
+await video.setViewportSize({ width: 1440, height: 2000 });
+await step('3 Picture').screenshot({ path: `${out}picture.png` });
+await video.setViewportSize({ width: 1440, height: 1100 });
+await video.getByTestId('slow-notice').waitFor({ timeout: 15000 }).catch(() => console.error('No slow notice appeared'));
+await video.getByTestId('slow-notice').locator('xpath=..').screenshot({ path: `${out}slow.png` }).catch(() => {});
+await panel.getByLabel('Video format').selectOption('hap');
+await step('5 Convert').screenshot({ path: `${out}format.png` });
 
 const phoneVideo = await open({ width: 390, height: 844 });
 await addVideos(phoneVideo, false);
