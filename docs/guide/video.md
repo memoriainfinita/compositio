@@ -44,7 +44,7 @@ In the editor, «Frame» saves the picture at the playhead as a PNG or a JPEG. W
 | **ProRes (MOV)** | Editing and playback programs that want an intermediate codec. Profile from Proxy to 4444; 4444 keeps the alpha of a source that has it. Files are large | PCM |
 | **HAP (MOV)** | Media servers and VJ software, which play HAP with little work for the computer. Very large files. *Hap* is lighter; *Hap Q* keeps color and gradients better and is about twice the size | PCM |
 
-Three presets come with a video format: «H.264 1080p 25 fps (player)», «ProRes HQ (Resolume)» and «HAP».
+Three presets come with a video format: «H.264 1080p 25 fps (player)», «ProRes HQ» and «HAP».
 
 HAP is made by compositio itself, not by ffmpeg, and needs the browser to decode the video you give it. If it cannot, the app says so before processing; see [Browsers](browsers.md).
 

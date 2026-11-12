@@ -183,7 +183,7 @@ test('presets: starters, save, rename, export, delete, import, apply', { tag: '@
   await choose(page, [{ name: 'tono.wav', buffer: wav(1) }]);
   await loaded(page, 1);
   const picker = output(page).getByRole('combobox', { name: 'Preset' });
-  await expect(picker.locator('option')).toHaveText(['Ajustes sin preset', 'WAV 48 kHz 24 bit', 'Teatro: WAV 48 kHz, -14 LUFS', 'MP3 320', 'H.264 1080p 25 fps (reproductor)', 'ProRes HQ (Resolume)', 'HAP']);
+  await expect(picker.locator('option')).toHaveText(['Ajustes sin preset', 'WAV 48 kHz 24 bit', 'Teatro: WAV 48 kHz, -14 LUFS', 'MP3 320', 'H.264 1080p 25 fps (reproductor)', 'ProRes HQ', 'HAP']);
   await picker.selectOption({ label: 'MP3 320' });
   await expect(output(page).getByLabel('Formato')).toHaveValue('mp3');
 

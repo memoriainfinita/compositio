@@ -246,7 +246,7 @@ export const en: Messages = {
   'preset.theatre': 'Theatre: WAV 48 kHz, -14 LUFS',
   'preset.mp3': 'MP3 320',
   'preset.h264': 'H.264 1080p 25 fps (player)',
-  'preset.prores': 'ProRes HQ (Resolume)',
+  'preset.prores': 'ProRes HQ',
   'preset.hap': 'HAP',
   'quick.title': 'Process with',
   'quick.hint': 'Choose files, or drop them here, and process them with {name}',

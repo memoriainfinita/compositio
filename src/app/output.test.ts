@@ -156,12 +156,12 @@ describe('presets', () => {
   });
 
   it('has three video starters: H.264 at 1080p 25 fps, ProRes HQ and HAP', () => {
-    const [, , , player, resolume, hap] = starterPresets(names);
+    const [, , , player, prores, hap] = starterPresets(names);
     expect(player!.settings.extract.kind).toBe('video');
     expect(player!.settings.picture).toMatchObject({ fps: '25', scale: { mode: 'fit', width: 1920, height: 1080 } });
     expect(player!.settings.convert.videoFormat).toBe('mp4');
-    expect(resolume!.settings.extract.kind).toBe('video');
-    expect(resolume!.settings.convert).toMatchObject({ videoFormat: 'prores', proresProfile: 'hq' });
+    expect(prores!.settings.extract.kind).toBe('video');
+    expect(prores!.settings.convert).toMatchObject({ videoFormat: 'prores', proresProfile: 'hq' });
     expect(hap!.settings.extract.kind).toBe('video');
     expect(hap!.settings.convert).toMatchObject({ videoFormat: 'hap', hapVariant: 'hap' });
   });

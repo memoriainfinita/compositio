@@ -251,7 +251,7 @@ export const es = {
   'preset.theatre': 'Teatro: WAV 48 kHz, -14 LUFS',
   'preset.mp3': 'MP3 320',
   'preset.h264': 'H.264 1080p 25 fps (reproductor)',
-  'preset.prores': 'ProRes HQ (Resolume)',
+  'preset.prores': 'ProRes HQ',
   'preset.hap': 'HAP',
   'quick.title': 'Procesar con',
   'quick.hint': 'Elegir archivos, o soltarlos aquí, y procesarlos con {name}',

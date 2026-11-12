@@ -31,13 +31,13 @@ export function starterPresets(names: readonly [string, string, string, string, 
   player.extract = { ...player.extract, kind: 'video' };
   player.picture = { ...player.picture, fps: '25', scale: { mode: 'fit', width: 1920, height: 1080 } };
   player.convert = { ...player.convert, videoFormat: 'mp4', h264Crf: 20, h264Preset: 'veryfast', aacBitrate: 256, sampleRate: 48000 };
-  const resolume = defaultSettings();
-  resolume.extract = { ...resolume.extract, kind: 'video' };
-  resolume.convert = { ...resolume.convert, videoFormat: 'prores', proresProfile: 'hq', bitDepth: 24, sampleRate: 48000 };
+  const prores = defaultSettings();
+  prores.extract = { ...prores.extract, kind: 'video' };
+  prores.convert = { ...prores.convert, videoFormat: 'prores', proresProfile: 'hq', bitDepth: 24, sampleRate: 48000 };
   const hap = defaultSettings();
   hap.extract = { ...hap.extract, kind: 'video' };
   hap.convert = { ...hap.convert, videoFormat: 'hap', hapVariant: 'hap', bitDepth: 24, sampleRate: 48000 };
-  return [wav, theatre, mp3, player, resolume, hap].map((settings, i) => ({ id: newId(), name: names[i]!, settings }));
+  return [wav, theatre, mp3, player, prores, hap].map((settings, i) => ({ id: newId(), name: names[i]!, settings }));
 }
 
 export function createPresetStore(initial: readonly Preset[], persist: (presets: readonly Preset[]) => void): PresetStore {
