@@ -4,6 +4,8 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versions: [sem
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-11-12
+
 ### Added
 
 - Video files: a «Picture» step with rotation, crop (dragged on the picture in the editor), size with five modes, frame rate, speed and fades to black; «Result: Audio or Video» and the sound kept, removed, silenced or replaced; a frame grabbed as PNG or JPEG; the editor shows the picture
@@ -46,5 +48,6 @@ First version.
 - A blank page after a new deploy while the app was open, when the server varies by Origin
 - On Android, the bottom bar and the foot of the output sheet were off screen: the browser bar counted in the height
 
-[Unreleased]: https://github.com/memoriainfinita/compositio/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/memoriainfinita/compositio/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/memoriainfinita/compositio/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/memoriainfinita/compositio/releases/tag/v0.1.0
