@@ -9,7 +9,7 @@ Prepare audio and video for live shows in the browser. Everything runs on your d
 
 **Live:** https://memoriainfinita.github.io/compositio/
 
-**Status:** version 0.2.0, which adds video ([changelog](CHANGELOG.md)). How to use it: [docs/guide](docs/guide/README.md). What each browser can do: [docs/guide/browsers.md](docs/guide/browsers.md).
+**Status:** audio and video are both in; see the [changelog](CHANGELOG.md) and the [releases](https://github.com/memoriainfinita/compositio/releases). How to use it: [docs/guide](docs/guide/README.md). What each browser can do: [docs/guide/browsers.md](docs/guide/browsers.md).
 
 ![compositio on a phone, dark theme: the mix tab with five tracks, their start times and crossfades, and the position slider](docs/compositio-demo.png)
 
