@@ -18,6 +18,7 @@ Web estática en GitHub Pages, en PC y móvil, para preparar audio y vídeo de e
 - Mezcla de vídeo por ffmpeg.wasm en el núcleo multihilo: `-filter_complex_threads 1`, porque con el valor por defecto se cuelga en Chrome
 - CI: el runner no tiene códec H.264, así que las pruebas de WebCodecs y de HAP se saltan allí y el proyecto `webcodecs-chrome` solo corre en local; las pruebas contra ffmpeg nativo también se saltan
 - Capturas de la guía y del README: `scripts/screenshots.mjs` (necesita `pnpm build`, `pnpm preview --host 127.0.0.1` y ffmpeg local); las dos del README viven en `docs/`, como pide el canon de `2_finished`
+- README al día con el canon revisado de `2_finished` (2026-11-12): sin versión escrita a mano, el `Status` enlaza al changelog y a las releases. `.archive/` y `docs/.backups/` se conservan tal cual (ignorados por git, con `node_modules` dentro); no se borran
 - Contenido del spec confirmado: `docs/design/spec-2026-10-27.md`
 - Arquitectura: GitHub Pages + ffmpeg.wasm (2026-10-27). `@ffmpeg/core` y `core-mt` instalados; `@ffmpeg/ffmpeg` y `util` llegan con el motor (paso 4)
 - Sin MVP: robusta y profesional desde el principio (2026-10-27). TypeScript 6.0.3 (typescript-eslint no admite el 7) + Vite 8 + pnpm; `vendor/` archivado en `.archive/`
