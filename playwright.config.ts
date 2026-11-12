@@ -19,8 +19,9 @@ export default defineConfig({
     // The interface again in the light theme.
     { name: 'app-light', testMatch: /(ui|files|editor|output|video|video-mix|mix|montages|pwa)\.spec\.ts/, grep: /@a11y/, use: { ...firefox(1), locale: 'es-ES', baseURL: 'http://127.0.0.1:4174/' } },
     { name: 'engine', testMatch: /(engine|webcodecs)\.spec\.ts/, use: { ...firefox(), baseURL: 'http://127.0.0.1:4176/' } },
-    // The WebCodecs engine again in Chrome, which encodes H.264 in hardware. Run by name: `--project=webcodecs-chrome`.
-    { name: 'webcodecs-chrome', testMatch: /webcodecs\.spec\.ts/, use: { ...devices['Desktop Chrome'], channel: 'chrome', launchOptions: { args: ['--mute-audio'] }, baseURL: 'http://127.0.0.1:4176/' } },
+    // The WebCodecs engine again in Chrome, which encodes H.264 in hardware. Not in CI, whose browsers have no
+    // H.264. Run by name: `--project=webcodecs-chrome`.
+    ...(process.env.CI ? [] : [{ name: 'webcodecs-chrome', testMatch: /webcodecs\.spec\.ts/, use: { ...devices['Desktop Chrome'], channel: 'chrome', launchOptions: { args: ['--mute-audio'] }, baseURL: 'http://127.0.0.1:4176/' } }]),
   ],
   webServer: [
     {

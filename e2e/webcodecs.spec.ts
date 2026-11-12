@@ -8,6 +8,9 @@ import { expect, test, type Page } from '@playwright/test';
 test.describe.configure({ mode: 'serial', timeout: 240_000 });
 
 let page: Page;
+// What this browser can do with H.264: a CI runner's Firefox or Chrome often has no codec at all.
+let canDecode = false;
+let canEncode = false;
 
 test.beforeAll(async ({ browser }) => {
   page = await browser.newPage();
@@ -34,11 +37,29 @@ test.beforeAll(async ({ browser }) => {
   });
 });
 
+test.beforeAll(async () => {
+  const support = await page.evaluate(async () => {
+    const ok = async (api: 'VideoDecoder' | 'VideoEncoder', config: object) => {
+      const target = (globalThis as any)[api];
+      return typeof target === 'function' && (await target.isConfigSupported(config).then((r: { supported?: boolean }) => !!r.supported, () => false));
+    };
+    return {
+      decode: await ok('VideoDecoder', { codec: 'avc1.640028' }),
+      encode: await ok('VideoEncoder', { codec: 'avc1.640028', width: 640, height: 360 }),
+    };
+  });
+  canDecode = support.decode;
+  canEncode = support.encode;
+});
+
+const needsH264 = () => test.skip(!canDecode || !canEncode, 'this browser has no H.264 decoder and encoder');
+
 test.afterAll(async () => {
   await page.close();
 });
 
 test('joins video from Mediabunny with AAC packets from ffmpeg into an mp4 in OPFS', async () => {
+  needsH264();
   const r = await page.evaluate(async () => {
     const { make, engine, mb } = (globalThis as never as { t: any }).t;
     const clip = await make('v.mp4', ['-f', 'lavfi', '-i', 'testsrc2=size=320x180:rate=25:duration=4', '-c:v', 'libx264', '-pix_fmt', 'yuv420p', '-an']);
@@ -129,6 +150,7 @@ const CASES: [string, object, object?][] = [
 ];
 
 test('both engines make the same video, in a different way', async () => {
+  needsH264();
   test.setTimeout(900_000);
   const results: Compared[] = await page.evaluate(async (cases) => {
     const { make, engine, mode, settings, edits, runner } = (globalThis as never as { t: any }).t;
@@ -218,6 +240,7 @@ test('without WebCodecs the automatic engine uses ffmpeg and a forced one says w
 });
 
 test('cancelling a WebCodecs job leaves nothing in OPFS', async () => {
+  needsH264();
   const r = await page.evaluate(async () => {
     const { make, engine, mode, settings, edits } = (globalThis as never as { t: any }).t;
     const clip = await make('long.mp4', ['-f', 'lavfi', '-i', 'testsrc2=size=640x360:rate=25:duration=20', '-c:v', 'libx264', '-preset', 'ultrafast', '-pix_fmt', 'yuv420p', '-an']);
@@ -250,6 +273,7 @@ test('cancelling a WebCodecs job leaves nothing in OPFS', async () => {
 });
 
 test('each engine stays close to the source picture', async () => {
+  needsH264();
   const r = await page.evaluate(async () => {
     const { make, engine, mode, settings, edits, runner } = (globalThis as never as { t: any }).t;
     const clip = await make('ref.mp4', ['-f', 'lavfi', '-i', 'testsrc2=size=640x360:rate=25:duration=4', '-c:v', 'libx264', '-crf', '12', '-pix_fmt', 'yuv420p', '-an']);
@@ -277,6 +301,7 @@ test('each engine stays close to the source picture', async () => {
 });
 
 test('both engines make the same video mix: canvas, length, sound and the crossfade', async () => {
+  needsH264();
   test.setTimeout(900_000);
   const results = await page.evaluate(async () => {
     const { make, engine, mode, settings, edits, timeline, runner } = (globalThis as never as { t: any }).t;
@@ -344,6 +369,7 @@ test('both engines make the same video mix: canvas, length, sound and the crossf
 });
 
 test('HAP: a clip and a mix come out as a mov that ffmpeg reads, with picture and sound; without a decoder it says why', async () => {
+  test.skip(!canDecode, 'this browser cannot decode H.264, which HAP needs');
   test.setTimeout(600_000);
   const r = await page.evaluate(async () => {
     const { make, engine, mode, settings, edits, timeline, runner } = (globalThis as never as { t: any }).t;

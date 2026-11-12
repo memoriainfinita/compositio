@@ -122,6 +122,9 @@ test('a video mix shows the pictures of its clips, the black of a sound, and the
 });
 
 test('a video mix in HAP: its options, a mov with the Hap texture, and the browser as its only engine', async ({ page }) => {
+  await page.goto('./');
+  const decodes = await page.evaluate(async () => typeof VideoDecoder === 'function' && (await VideoDecoder.isConfigSupported({ codec: 'avc1.640028' }).then((r) => !!r.supported, () => false)));
+  test.skip(!decodes, 'this browser cannot decode H.264, which HAP needs');
   await open(page);
   await threeClips(page);
   await asVideo(page);
