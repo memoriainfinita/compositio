@@ -339,7 +339,9 @@ export function mixPlan(clips: readonly MixClip[], mix: MixSettings, inputPaths:
       if (video && mix.video.format === 'hap') return { error: 'hap-needs-decoder' };
       const built = soundGraph(gains, video ? videoChains(video.parts, lay, video.canvas, vtail) : []);
       if ('error' in built) return built;
-      const codec = video ? videoCodec(mix, encoderThreads) : MIX_CODEC[mix.format];
+      // On the multithread core the filter graph keeps to one thread: with its own default (one per
+      // processor) ffmpeg.wasm hangs in Chrome, whose worker pool is spawned after the main thread blocks.
+      const codec = video ? [...(encoderThreads ? ['-filter_complex_threads', '1'] : []), ...videoCodec(mix, encoderThreads)] : MIX_CODEC[mix.format];
       return assemble(built, inputPaths, codec, [outputPath]);
     },
   };

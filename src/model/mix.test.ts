@@ -169,6 +169,14 @@ describe('video mix plan', () => {
     expect(p.video?.canvas).toEqual({ size: { width: 160, height: 90 }, fps: { num: 25, den: 1 } });
   });
 
+  it('keeps the filter graph to one thread on the multithread core, for any video format', () => {
+    for (const format of ['mp4', 'prores'] as const) {
+      const p = planOf([vclip('a'), vclip('b')], vmix({ video: { ...vmix().video, format } }));
+      expect(p.render(null, 2)).toEqual(expect.arrayContaining(['-filter_complex_threads', '1']));
+      expect(p.render(null)).not.toContain('-filter_complex_threads');
+    }
+  });
+
   it('puts silence where a clip has no sound and black where it has no picture', () => {
     const mute = vclip('b', { info: clipInfo({ duration: 10 }, { width: 160, height: 90 }) });
     mute.info = { ...mute.info, tracks: mute.info.tracks.filter((t) => t.kind === 'video') };
