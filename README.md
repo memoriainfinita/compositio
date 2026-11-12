@@ -9,9 +9,9 @@ Prepare audio and video for live shows in the browser. Everything runs on your d
 
 **Live:** https://memoriainfinita.github.io/compositio/
 
-**Status:** version 0.1.0, the first one ([changelog](CHANGELOG.md)). How to use it: [docs/guide](docs/guide/README.md). What each browser can do: [docs/guide/browsers.md](docs/guide/browsers.md).
+**Status:** version 0.2.0, which adds video ([changelog](CHANGELOG.md)). How to use it: [docs/guide](docs/guide/README.md). What each browser can do: [docs/guide/browsers.md](docs/guide/browsers.md).
 
-![compositio on a phone, dark theme: the mix tab with five tracks, their start times and crossfades, and the position slider](docs/guide/img/compositio-demo.png)
+![compositio on a phone, dark theme: the mix tab with five tracks, their start times and crossfades, and the position slider](docs/compositio-demo.png)
 
 ## Files
 
@@ -61,7 +61,7 @@ Prepare audio and video for live shows in the browser. Everything runs on your d
 - «Try an example» with three sample tracks
 - About, with the licences and the code of compositio, ffmpeg.wasm and FFmpeg, and a button that copies the technical details for an issue
 
-![compositio on desktop, light theme: the file list, the editor with the waveform of the active file, the mix strip with five tracks and their fades under its ruler and playhead, and the output steps](docs/guide/img/compositio-desktop.png)
+![compositio on desktop, light theme: the file list, the editor with the waveform of the active file, the mix strip with five tracks and their fades under its ruler and playhead, and the output steps](docs/compositio-desktop.png)
 
 ![compositio with video, on desktop: three clips, the editor with the crop dragged on the picture, a video mix with its strip, and the output steps for a video](docs/guide/img/video-workspace.png)
 
