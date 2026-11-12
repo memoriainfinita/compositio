@@ -89,3 +89,24 @@ describe('parseSilences', () => {
     expect(parseSilences(log('silence_start: 0', 'silence_end: 10 | silence_duration: 10'), 10)).toEqual({ head: 0, tail: 10 });
   });
 });
+
+describe('toMediaInfo, video details', () => {
+  const stream = (over: Record<string, unknown>) => ({ streams: [{ codec_type: 'video', codec_name: 'hevc', width: 3840, height: 2160, avg_frame_rate: '30000/1001', ...over }], format: { duration: '4' } }) as ProbeJson;
+  const track = (over: Record<string, unknown>) => {
+    const t = toMediaInfo(stream(over)).tracks[0];
+    if (t?.kind !== 'video') throw new Error('no video');
+    return t;
+  };
+
+  it('reads pixel format, depth, transfer, bitrate and pixel shape', () => {
+    const t = track({ pix_fmt: 'yuv420p10le', color_transfer: 'smpte2084', bit_rate: '12000000', sample_aspect_ratio: '4:3' });
+    expect(t).toMatchObject({ pixelFormat: 'yuv420p10le', bitDepth: 10, transfer: 'smpte2084', bitrate: 12000, sampleAspect: { num: 4, den: 3 } });
+  });
+
+  it('leaves out what the file does not say', () => {
+    const t = track({ color_transfer: 'unknown', sample_aspect_ratio: '0:1' });
+    expect(t.transfer).toBeUndefined();
+    expect(t.sampleAspect).toBeUndefined();
+    expect(t.pixelFormat).toBeUndefined();
+  });
+});

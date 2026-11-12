@@ -17,6 +17,9 @@ interface ProbeStream {
   height?: number;
   avg_frame_rate?: string;
   r_frame_rate?: string;
+  pix_fmt?: string;
+  sample_aspect_ratio?: string;
+  color_transfer?: string;
   duration?: string;
   disposition?: { attached_pic?: number };
   tags?: Record<string, string>;
@@ -39,6 +42,22 @@ function rational(s: string | undefined): Rational | undefined {
   const m = /^(\d+)\/(\d+)$/.exec(s ?? '');
   if (!m || Number(m[2]) === 0 || Number(m[1]) === 0) return undefined;
   return { num: Number(m[1]), den: Number(m[2]) };
+}
+
+/** `2:1`, ffprobe's form for an aspect ratio; `0:1` and `N/A` mean unknown. */
+function colonRatio(s: string | undefined): Rational | undefined {
+  const m = /^(\d+):(\d+)$/.exec(s ?? '');
+  if (!m || Number(m[1]) === 0 || Number(m[2]) === 0) return undefined;
+  return { num: Number(m[1]), den: Number(m[2]) };
+}
+
+/** Bits per component from the stream's own count or, failing that, from the pixel format's name. */
+function videoDepth(s: ProbeStream): number | undefined {
+  const raw = finite(s.bits_per_raw_sample);
+  if (raw) return raw;
+  const m = /(\d+)(?:le|be)$/.exec(s.pix_fmt ?? '');
+  if (m) return Number(m[1]);
+  return s.pix_fmt ? 8 : undefined;
 }
 
 /** Degrees as ffmpeg reports them, counter-clockwise, snapped to quarter turns. */
@@ -95,6 +114,9 @@ export function toMediaInfo(json: ProbeJson): MediaInfo {
         hasCover = true;
         continue;
       }
+      const depth = videoDepth(s);
+      const sar = colonRatio(s.sample_aspect_ratio);
+      const rate = finite(s.bit_rate) ?? (alone ? finite(json.format?.bit_rate) : undefined);
       tracks.push({
         kind: 'video',
         index,
@@ -103,6 +125,11 @@ export function toMediaInfo(json: ProbeJson): MediaInfo {
         height: s.height ?? 0,
         fps: rational(s.avg_frame_rate) ?? rational(s.r_frame_rate) ?? { num: 0, den: 1 },
         rotation: rotation(s),
+        ...(s.pix_fmt ? { pixelFormat: s.pix_fmt } : {}),
+        ...(depth ? { bitDepth: depth } : {}),
+        ...(rate ? { bitrate: Math.round(rate / 1000) } : {}),
+        ...(sar ? { sampleAspect: sar } : {}),
+        ...(s.color_transfer && s.color_transfer !== 'unknown' ? { transfer: s.color_transfer } : {}),
       });
     }
   }

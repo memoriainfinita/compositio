@@ -29,6 +29,16 @@ export interface VideoTrack {
   height: number;
   fps: Rational;
   rotation: 0 | 90 | 180 | 270;
+  /** As ffprobe names it (`yuv420p`, `yuv422p10le`, `yuva444p`...); absent when it does not say. */
+  pixelFormat?: string;
+  /** Bits per color component. */
+  bitDepth?: number;
+  /** Kilobits per second of the video stream, when the file says. */
+  bitrate?: number;
+  /** Shape of a pixel; absent or 1:1 for square ones. */
+  sampleAspect?: Rational;
+  /** Transfer characteristic (`smpte2084` for PQ, `arib-std-b67` for HLG); absent when untagged. */
+  transfer?: string;
 }
 
 export type Track = AudioTrack | VideoTrack;
@@ -58,6 +68,30 @@ export const videoTracks = (info: MediaInfo): VideoTrack[] =>
 export const isVideo = (info: MediaInfo): boolean => videoTracks(info).length > 0;
 
 export const fpsValue = (fps: Rational): number => fps.num / fps.den;
+
+export const hasAlpha = (t: VideoTrack): boolean => /^(yuva|rgba|bgra|argb|abgr|gbrap|ya)/.test(t.pixelFormat ?? '');
+
+/** PQ and HLG sources: the app does not map them to SDR. */
+export const isHdr = (t: VideoTrack): boolean => t.transfer === 'smpte2084' || t.transfer === 'arib-std-b67';
+
+export interface Size {
+  width: number;
+  height: number;
+}
+
+const squareRatio = (t: VideoTrack): number => {
+  const s = t.sampleAspect;
+  return s && s.num > 0 && s.den > 0 ? s.num / s.den : 1;
+};
+
+/** Whether pixels are not square, so the picture needs stretching to its true shape. */
+export const hasAnamorphicPixels = (t: VideoTrack): boolean => Math.abs(squareRatio(t) - 1) > 0.001;
+
+/** The picture as people see it: square pixels, turned by the file's rotation tag. */
+export function orientedSize(t: VideoTrack): Size {
+  const w = Math.round(t.width * squareRatio(t));
+  return t.rotation === 90 || t.rotation === 270 ? { width: t.height, height: w } : { width: w, height: t.height };
+}
 
 /** Seconds as ffmpeg reads them: fixed microsecond precision, never exponent notation. */
 export const ffTime = (seconds: number): string => Math.max(0, seconds).toFixed(6);

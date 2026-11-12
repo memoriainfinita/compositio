@@ -12,6 +12,9 @@ import { stem } from '../../model/naming.ts';
 import { Dialog } from '../Dialog.tsx';
 import { fileSize } from '../format.ts';
 
+/** Reasons of an invalid-input failure that have a message of their own. */
+const SPECIFIC = new Set(['hap-needs-decoder', 'forced-webcodecs-unavailable']);
+
 function useJobs(): JobView[] {
   const { engine } = useApp();
   const [jobs, setJobs] = useState<JobView[]>(() => engine?.queue.jobs() ?? []);
@@ -47,7 +50,7 @@ function JobRow({ job }: { job: JobView }) {
         <span class="muted small">{job.status === 'running' ? percent(job.progress) : result ? fileSize(result.blob.size) : status}</span>
       </div>
       {(job.status === 'running' || job.status === 'queued') && <progress class="job-progress" max={1} value={job.progress} aria-label={`${job.label}: ${status}`} />}
-      {job.status === 'failed' && <p class="job-error small">{t(`engineError.${job.error ?? 'ffmpeg-failed'}` as Key)}</p>}
+      {job.status === 'failed' && <p class="job-error small">{t(`engineError.${job.error === 'invalid-input' && job.detail && SPECIFIC.has(job.detail) ? job.detail : (job.error ?? 'ffmpeg-failed')}` as Key)}</p>}
       <div class="job-actions">
         {(job.status === 'running' || job.status === 'queued') && (
           <button type="button" class="button small-button" onClick={() => queue.cancel(job.id)}>

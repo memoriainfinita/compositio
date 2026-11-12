@@ -5,9 +5,10 @@ import './ui/app.css';
 import { render } from 'preact';
 import { createMontageLibrary } from './app/montages.ts';
 import { createPresetStore, starterPresets } from './app/presets.ts';
+import { bindAppSettings, videoEngine } from './app/settings.ts';
 import { takeShared, wasShared } from './app/share.ts';
 import { createAppState } from './app/state.ts';
-import { createEngine } from './engine/index.ts';
+import { createEngine, sweepOutputs } from './engine/index.ts';
 import { bindDocumentLang, lang, resolveLang, t } from './i18n/index.ts';
 import type { Preset } from './model/formats.ts';
 import { emptyProject } from './model/project.ts';
@@ -46,7 +47,7 @@ async function boot() {
   const loaded = (await storage?.loadPresets()) ?? { ok: true as const, value: null };
   const save = (list: readonly Preset[]) => void storage?.savePresets(list).catch((e) => console.error('presets', e));
   const presets = loaded.ok
-    ? createPresetStore(loaded.value ?? starterPresets([t('preset.wav'), t('preset.theatre'), t('preset.mp3')]), save)
+    ? createPresetStore(loaded.value ?? starterPresets([t('preset.wav'), t('preset.theatre'), t('preset.mp3'), t('preset.h264'), t('preset.prores'), t('preset.hap')]), save)
     : createPresetStore([], () => {});
   if (loaded.ok && loaded.value === null) save(presets.list.value);
 
@@ -56,7 +57,11 @@ async function boot() {
     remove: (id) => storage?.deleteMontage(id) ?? Promise.resolve(),
   });
 
-  const engine = createEngine();
+  // Video made by WebCodecs lives in OPFS; what an earlier session left there is no one's now.
+  void sweepOutputs().catch(() => {});
+  // A settings document this version cannot read is left as it is: the control then works for the session only.
+  bindAppSettings(settings?.ok ? settings.value : null, (s) => void storage?.saveSettings(s).catch((e) => console.error('settings', e)));
+  const engine = createEngine(undefined, undefined, () => videoEngine.value);
   const app = createAppState(store, engine, presets, montages);
   addEventListener('beforeinstallprompt', (e) => {
     e.preventDefault();

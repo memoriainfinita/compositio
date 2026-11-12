@@ -13,7 +13,9 @@ const DRIFT = 0.25;
 
 interface Voice {
   url: string;
-  el: HTMLAudioElement;
+  /** A video element for a clip whose picture is shown, an audio one otherwise. */
+  el: HTMLMediaElement;
+  video: boolean;
   gain: GainNode | null;
 }
 
@@ -48,6 +50,12 @@ export class MixPlayer {
 
   get time(): number {
     return this.on ? this.clock.t + (performance.now() - this.clock.at) / 1000 : this.paused;
+  }
+
+  /** The element a clip plays from when it shows its picture; null when it has none now. */
+  videoOf(clipId: string): HTMLVideoElement | null {
+    const v = this.voices.get(clipId);
+    return v?.video ? (v.el as HTMLVideoElement) : null;
   }
 
   /** The mix or the files changed: what plays follows at once. */
@@ -152,16 +160,21 @@ export class MixPlayer {
   private voice(c: LiveClip): Voice | null {
     const url = this.urlOf(c.fileId);
     const had = this.voices.get(c.clipId);
-    if (had && had.url === url) return had;
+    const video = this.live.video && c.picture;
+    if (had && had.url === url && had.video === video) return had;
     if (had) this.drop(c.clipId);
     if (!url) return null;
-    const el = new Audio();
+    const el = video ? document.createElement('video') : new Audio();
+    if (el instanceof HTMLVideoElement) {
+      el.playsInline = true;
+      el.disablePictureInPicture = true;
+    }
     el.preload = 'auto';
     el.addEventListener('error', () => this.onUnplayable(c.fileId));
     el.src = url;
     el.currentTime = c.from;
     // A new element per voice: Web Audio takes an element only once.
-    const v: Voice = { url, el, gain: null };
+    const v: Voice = { url, el, video, gain: null };
     this.voices.set(c.clipId, v);
     if (this.on) this.wire(v);
     return v;

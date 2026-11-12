@@ -8,6 +8,12 @@ const Svg = ({ children, size = 20 }: { children: JSX.Element | JSX.Element[]; s
   </svg>
 );
 
+export const CameraIcon = () => (
+  <Svg>
+    <path d="M4 8 h3 l2 -3 h6 l2 3 h3 v11 H4 Z M12 17 a3.5 3.5 0 1 0 0 -7 a3.5 3.5 0 0 0 0 7" />
+  </Svg>
+);
+
 export const UndoIcon = () => (
   <Svg>
     <path d="M9 7 L4 12 L9 17 M4 12 h11 a5 5 0 0 1 0 10 h-2" />

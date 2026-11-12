@@ -3,9 +3,11 @@
 
 import { signal } from '@preact/signals';
 import type { Engine, MixInput } from '../engine/index.ts';
+import type { Assessment } from '../engine/jobs.ts';
 import type { Measurement } from '../model/operations.ts';
 import { keptRange, rangeLength } from '../model/edits.ts';
-import { lengthsOf, matchGain, measureKeyOf, sourceOf, wavBytes, WAV_MEMORY_LIMIT, type MixClip } from '../model/mix.ts';
+import { lengthsOf, matchGain, measureKeyOf, mixExtension, sourceOf, wavBytes, WAV_MEMORY_LIMIT, type MixClip } from '../model/mix.ts';
+import { videoTracks } from '../model/media.ts';
 import { stem } from '../model/naming.ts';
 import type { Project } from '../model/project.ts';
 import { effectiveSettings } from '../model/settings.ts';
@@ -46,7 +48,7 @@ export function mixClips(project: Project, files: Files): { clips: MixClip[]; fi
  * every clip takes its saved duration, as a saved montage in the library.
  */
 export function stripLayout(project: Project, files?: Files): Layout {
-  const lengths = files ? lengthsOf(mixClips(project, files).clips) : new Map<string, number>();
+  const lengths = files ? lengthsOf(mixClips(project, files).clips, project.mix.kind === 'video') : new Map<string, number>();
   for (const c of project.clips) {
     if (lengths.has(c.id)) continue;
     const ref = project.files.find((f) => f.id === c.fileId);
@@ -55,17 +57,20 @@ export function stripLayout(project: Project, files?: Files): Layout {
   return layout(project.clips, lengths, project.mix);
 }
 
-export type Blocker = 'empty' | 'missing' | 'no-engine';
+export type Blocker = 'empty' | 'missing' | 'no-picture' | 'no-engine';
 
 export function blocker(project: Project, files: Files, engine: Engine | null): Blocker | null {
   if (project.clips.length === 0) return 'empty';
-  if (mixClips(project, files).missing.length) return 'missing';
+  const { clips, missing } = mixClips(project, files);
+  if (missing.length) return 'missing';
+  // A video mix needs at least one clip with picture to give the canvas.
+  if (project.mix.kind === 'video' && !clips.some((c) => videoTracks(c.info).length > 0)) return 'no-picture';
   return engine ? null : 'no-engine';
 }
 
 /** The WAV mix's size when it may not fit in memory; null otherwise. */
 export function memoryRisk(mix: MixSettings, duration: number): number | null {
-  if (mix.format !== 'wav') return null;
+  if (mix.kind === 'video' || mix.format !== 'wav') return null;
   const bytes = wavBytes(duration, mix.sampleRate);
   return bytes > WAV_MEMORY_LIMIT ? bytes : null;
 }
@@ -79,9 +84,14 @@ const input = (project: Project, files: Files): MixInput => {
 
 /** Queues the mix; when done, it waits in «Exportaciones» with the other results. */
 export function generate(engine: Pick<Engine, 'mix'>, project: Project, files: Files): { id: string; name: string; result: Promise<unknown> } {
-  const name = mixName(project, project.mix.format);
+  const name = mixName(project, mixExtension(project.mix));
   const { id, result } = engine.mix(name, input(project, files));
   return { id, name, result };
+}
+
+/** Which engine would make the video mix and how slow it would be; null for a sound mix. */
+export function assess(engine: Pick<Engine, 'assessMix'>, project: Project, files: Files): Promise<Assessment | null> {
+  return engine.assessMix(input(project, files));
 }
 
 /** The transition into the clip at `index`, with a draft in place of the saved one. */
@@ -106,8 +116,8 @@ export function liveGains(engine: Pick<Engine, 'measureMix'> | null, project: Pr
   const gains = new Map<string, number>();
   const missing: string[] = [];
   for (const c of all.clips) {
-    const s = sourceOf(c);
-    if ('error' in s) continue;
+    const s = sourceOf(c, project.mix.kind === 'video');
+    if ('error' in s || !s.track) continue;
     const key = measureKeyOf(c.clip.fileId, s);
     const m = all.measured.get(key);
     if (m) gains.set(c.clip.id, matchGain(m, project.mix.matchLufs));

@@ -16,8 +16,8 @@ Open https://memoriainfinita.github.io/compositio/ in Firefox, Chrome or Safari.
 
 - **Files:** the checkbox marks a file for processing and for the mix; pressing the file opens it in the editor
 - **Editor:** the waveform of the open file, with its in and out points, fades and the technical line (format, sample rate, bit depth, channels, and the bitrate of lossy files)
-- **Mix:** the checked files one after another, with crossfades
-- **Output:** the settings of what comes out, in five steps
+- **Mix:** the checked files one after another, with crossfades; of sound, or of picture and sound
+- **Output:** the settings of what comes out, in five steps (six for a video, which has «Picture»; see [Video](video.md))
 - **Exports:** the results wait in the bar at the bottom until you download them
 
 ## Edit a file

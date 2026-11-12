@@ -1,4 +1,4 @@
-// Output settings: the five steps of «Salida», in their fixed order. The batch has one full set;
+// Output settings: the steps of «Salida», in their fixed order. The batch has one full set;
 // a file may override single values. Schemas are the source of the types and of the defaults.
 
 import * as v from 'valibot';
@@ -15,12 +15,28 @@ export type Fade = v.InferOutput<typeof FadeSchema>;
 export const FORMATS = ['wav', 'flac', 'mp3', 'aac', 'opus', 'ogg'] as const;
 export type Format = (typeof FORMATS)[number];
 
+export const VIDEO_FORMATS = ['mp4', 'prores', 'hap'] as const;
+export type VideoFormat = (typeof VIDEO_FORMATS)[number];
+/** HAP's two kinds of texture: DXT1 (Hap) and scaled YCoCg DXT5 (Hap Q). */
+export const HAP_VARIANTS = ['hap', 'hapq'] as const;
+export type HapVariant = (typeof HAP_VARIANTS)[number];
+export const H264_PRESETS = ['veryfast', 'fast', 'medium', 'slow'] as const;
+export const PRORES_PROFILES = ['proxy', 'lt', 'standard', 'hq', '4444'] as const;
+
 export const SAMPLE_RATES = [44100, 48000, 88200, 96000] as const;
+
+export const AUDIO_SOURCES = ['keep', 'none', 'silence', 'replace'] as const;
 
 const ExtractSchema = v.object({
   /** Audio track to keep, by position among the file's audio tracks. */
   track: v.optional(v.pipe(v.number(), v.integer(), v.minValue(0)), 0),
   mode: v.optional(v.picklist(['encode', 'copy']), 'encode'),
+  /** What comes out: a sound file, or a video file. Audio is the default so that nothing already saved changes. */
+  kind: v.optional(v.picklist(['audio', 'video']), 'audio'),
+  /** With video: keep the file's sound, drop it, put silence in its place, or take it from another file. */
+  audio: v.optional(v.picklist(AUDIO_SOURCES), 'keep'),
+  /** The file whose sound replaces this one's: only makes sense among a file's own settings. */
+  replaceWith: v.optional(v.nullable(v.object({ fileId: v.string(), track: v.pipe(v.number(), v.integer(), v.minValue(0)) })), null),
 });
 
 const TrimSchema = v.object({
@@ -28,6 +44,33 @@ const TrimSchema = v.object({
   silence: v.optional(v.boolean(), false),
   /** MP3/AAC to the same format without re-encoding: cut at frame edges, no fades. */
   lossless: v.optional(v.boolean(), false),
+});
+
+export const SCALE_MODES = ['source', 'fit', 'fill', 'letterbox', 'stretch'] as const;
+export const FRAME_RATES = ['24000/1001', '24', '25', '30000/1001', '30', '50', '60000/1001', '60'] as const;
+export const ROTATIONS = [0, 90, 180, 270] as const;
+
+const pixels = v.pipe(v.number(), v.integer(), v.minValue(0));
+
+const PictureSchema = v.object({
+  /** Clockwise, on top of the file's own rotation tag. */
+  rotate: v.optional(v.picklist(ROTATIONS), 0),
+  /** In pixels of the picture as seen: square pixels, rotation applied. */
+  crop: v.optional(v.nullable(v.object({ x: pixels, y: pixels, width: v.pipe(v.number(), v.integer(), v.minValue(1)), height: v.pipe(v.number(), v.integer(), v.minValue(1)) })), null),
+  scale: v.optional(
+    v.object({
+      mode: v.optional(v.picklist(SCALE_MODES), 'source'),
+      width: v.optional(v.pipe(v.number(), v.integer(), v.minValue(2), v.maxValue(8192)), 1920),
+      height: v.optional(v.pipe(v.number(), v.integer(), v.minValue(2), v.maxValue(8192)), 1080),
+    }),
+    {},
+  ),
+  /** The output always has a constant rate: `source` fixes the file's own. */
+  fps: v.optional(v.union([v.literal('source'), v.picklist(FRAME_RATES)]), 'source'),
+  /** Picture and sound together; the sound keeps its pitch. */
+  speed: v.optional(v.pipe(v.number(), v.minValue(0.25), v.maxValue(4)), 1),
+  /** The file's fades in and out also fade the picture to black (straight lines: the curve is the sound's). */
+  fadeToBlack: v.optional(v.boolean(), true),
 });
 
 const NormalizeSchema = v.object({
@@ -58,6 +101,12 @@ const ConvertSchema = v.object({
   opusBitrate: v.optional(v.picklist([96, 128, 160, 192, 256]), 160),
   oggQuality: v.optional(v.pipe(v.number(), v.integer(), v.minValue(0), v.maxValue(10)), 6),
   keepMetadata: v.optional(v.boolean(), true),
+  /** Video files only; `format` and the rest of this step stay the sound's. Flat, so that a file's own value merges. */
+  videoFormat: v.optional(v.picklist(VIDEO_FORMATS), 'mp4'),
+  h264Crf: v.optional(v.pipe(v.number(), v.integer(), v.minValue(0), v.maxValue(51)), 18),
+  h264Preset: v.optional(v.picklist(H264_PRESETS), 'veryfast'),
+  proresProfile: v.optional(v.picklist(PRORES_PROFILES), 'hq'),
+  hapVariant: v.optional(v.picklist(HAP_VARIANTS), 'hap'),
 });
 
 const OutputSchema = v.object({
@@ -68,18 +117,23 @@ const OutputSchema = v.object({
 export const OutputSettingsSchema = v.object({
   extract: v.optional(ExtractSchema, {}),
   trim: v.optional(TrimSchema, {}),
+  picture: v.optional(PictureSchema, {}),
   normalize: v.optional(NormalizeSchema, {}),
   convert: v.optional(ConvertSchema, {}),
   output: v.optional(OutputSchema, {}),
 });
 export type OutputSettings = v.InferOutput<typeof OutputSettingsSchema>;
 export type Step = keyof OutputSettings;
-export const STEPS: readonly Step[] = ['extract', 'trim', 'normalize', 'convert', 'output'];
+export const STEPS: readonly Step[] = ['extract', 'trim', 'picture', 'normalize', 'convert', 'output'];
+
+/** The steps that mean something for a file: the picture's only with a picture to work on. */
+export const stepsFor = (hasPicture: boolean): readonly Step[] => (hasPicture ? STEPS : STEPS.filter((s) => s !== 'picture'));
 
 /** A file's own values: only what differs from the batch, section by section. */
 export const OverridesSchema = v.object({
   extract: v.optional(v.partial(ExtractSchema)),
   trim: v.optional(v.partial(TrimSchema)),
+  picture: v.optional(v.partial(PictureSchema)),
   normalize: v.optional(v.partial(NormalizeSchema)),
   convert: v.optional(v.partial(ConvertSchema)),
   output: v.optional(v.partial(OutputSchema)),

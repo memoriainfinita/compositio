@@ -16,15 +16,28 @@ export interface PresetStore {
   exportText(ids?: readonly string[]): string;
 }
 
-/** «WAV 48 kHz 24 bit», «Teatro: WAV 48 kHz, -14 LUFS», «MP3 320». Names in the language of the first run. */
-export function starterPresets(names: readonly [string, string, string]): Preset[] {
+/**
+ * «WAV 48 kHz 24 bit», «Teatro: WAV 48 kHz, -14 LUFS», «MP3 320», «H.264 1080p 25 fps», «ProRes HQ» and «HAP».
+ * Names in the language of the first run.
+ */
+export function starterPresets(names: readonly [string, string, string, string, string, string]): Preset[] {
   const wav = defaultSettings();
   wav.convert = { ...wav.convert, format: 'wav', sampleRate: 48000, bitDepth: 24 };
   const theatre = structuredClone(wav);
   theatre.normalize = { ...theatre.normalize, enabled: true, mode: 'lufs', lufs: -14 };
   const mp3 = defaultSettings();
   mp3.convert = { ...mp3.convert, format: 'mp3', mp3: { mode: 'cbr', bitrate: 320, quality: 0 } };
-  return [wav, theatre, mp3].map((settings, i) => ({ id: newId(), name: names[i]!, settings }));
+  const player = defaultSettings();
+  player.extract = { ...player.extract, kind: 'video' };
+  player.picture = { ...player.picture, fps: '25', scale: { mode: 'fit', width: 1920, height: 1080 } };
+  player.convert = { ...player.convert, videoFormat: 'mp4', h264Crf: 20, h264Preset: 'veryfast', aacBitrate: 256, sampleRate: 48000 };
+  const resolume = defaultSettings();
+  resolume.extract = { ...resolume.extract, kind: 'video' };
+  resolume.convert = { ...resolume.convert, videoFormat: 'prores', proresProfile: 'hq', bitDepth: 24, sampleRate: 48000 };
+  const hap = defaultSettings();
+  hap.extract = { ...hap.extract, kind: 'video' };
+  hap.convert = { ...hap.convert, videoFormat: 'hap', hapVariant: 'hap', bitDepth: 24, sampleRate: 48000 };
+  return [wav, theatre, mp3, player, resolume, hap].map((settings, i) => ({ id: newId(), name: names[i]!, settings }));
 }
 
 export function createPresetStore(initial: readonly Preset[], persist: (presets: readonly Preset[]) => void): PresetStore {

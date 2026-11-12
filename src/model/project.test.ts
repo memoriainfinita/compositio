@@ -67,7 +67,7 @@ describe('project commands', () => {
   it('set and reset a clip transition', () => {
     const p = addClips(withFiles(), ['a', 'b']);
     const id = p.clips[1]!.id;
-    const t = { duration: 3, curve: 'qsin' as const, cut: false };
+    const t = { duration: 3, curve: 'qsin' as const, cut: false, style: 'dissolve' as const };
     const q = setTransition(p, id, t);
     expect(q.clips[1]?.transitionIn).toEqual(t);
     expect(setTransition(q, id, t)).toBe(q);

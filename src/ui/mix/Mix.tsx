@@ -6,8 +6,10 @@ import { useSignal, type Signal } from '@preact/signals';
 import type { ComponentChildren } from 'preact';
 import { useEffect, useLayoutEffect, useRef } from 'preact/hooks';
 import Sortable from 'sortablejs';
-import { blocker, generate, memoryRisk, saveTimes, stripLayout } from '../../app/mix.ts';
+import { assess, blocker, generate, memoryRisk, saveTimes, stripLayout } from '../../app/mix.ts';
 import { showExports, useApp, type AppState } from '../../app/state.ts';
+import { requestThumb, thumbKey, thumbUrl } from '../../app/thumbs.ts';
+import { engineLabel } from '../../engine/index.ts';
 import { t } from '../../i18n/index.ts';
 import { addClips, moveClip, removeClip, setMix, setTransition, type Project } from '../../model/project.ts';
 import { transitionOf, type Clip, type Layout, type MixSettings } from '../../model/timeline.ts';
@@ -18,8 +20,10 @@ import { Dialog } from '../Dialog.tsx';
 import { montageDialog } from '../Montages.tsx';
 import { NumberField } from '../output/Inspector.tsx';
 import { fadeEnvelope, type Live } from './live.ts';
+import { MixMonitor } from './Monitor.tsx';
 import { MixTransport, Playhead, Ruler, useMixPlayback, type Playback, type Zoom } from './Playback.tsx';
 import { MAX_TRANSITION, seconds, TransitionDialog } from './Transition.tsx';
+import { VideoOptions } from './VideoOptions.tsx';
 
 const nameOf = (p: Project, clip: Clip): string => p.files.find((f) => f.id === clip.fileId)?.name ?? '';
 
@@ -216,6 +220,23 @@ function Thumb({ fileId }: { fileId: string }) {
   );
 }
 
+/** In a video mix, the picture a clip starts with, or a mark when it has none and plays as black. */
+function Frame({ clip, pb }: { clip: Clip; pb: Playback }) {
+  const { files, engine } = useApp();
+  const live = pb.live.clips.find((c) => c.clipId === clip.id);
+  const info = files.infos.value.get(clip.fileId);
+  const file = files.sources.value.get(clip.fileId);
+  const key = live ? thumbKey(clip.fileId, live.from) : '';
+  const wanted = Boolean(live?.picture && info && file);
+  useEffect(() => {
+    if (wanted && live && info && file) requestThumb(key, file, info, live.from, engine);
+  }, [key, wanted]);
+  const url = key ? thumbUrl(key) : undefined;
+  if (!live) return null;
+  if (!live.picture) return <span class="mix-black">{t('mix.black')}</span>;
+  return url ? <img class="mix-frame" src={url} alt="" /> : <div class="mix-frame" aria-hidden="true" />;
+}
+
 /** The most the strip zooms in, in pixels per second. */
 const MAX_PPS = 100;
 
@@ -299,6 +320,7 @@ function Strip({ layout, onOpen, pb, zoom, width }: { layout: Layout; onOpen(ind
                   <span class="mono muted">{placed ? shortTime(placed.start) : ''}</span>
                   <span class="mix-clip-name">{name}</span>
                 </span>
+                {here && p.mix.kind === 'video' && <Frame clip={clip} pb={pb} />}
                 {here ? <Thumb fileId={clip.fileId} /> : <span class="file-missing">{t('mix.missing')}</span>}
               </button>
               {here && <Fades live={pb.live} clipId={clip.id} />}
@@ -424,17 +446,27 @@ function MixOptions() {
         </label>
         <NumberField id="mix-lufs" label={t('mix.matchTarget')} value={mix.matchLufs} min={-40} max={-5} step={0.5} unit="LUFS" onChange={(n) => set({ matchLufs: n })} />
       </span>
-      <span class="segmented" role="group" aria-label={t('mix.format')}>
-        {(['wav', 'mp3'] as const).map((f) => (
-          <button key={f} type="button" class="segment" aria-pressed={mix.format === f} onClick={() => set({ format: f })}>
-            {f.toUpperCase()}
+      <span class="segmented" role="group" aria-label={t('mix.kind')}>
+        {(['audio', 'video'] as const).map((k) => (
+          <button key={k} type="button" class="segment" aria-pressed={mix.kind === k} onClick={() => set({ kind: k })}>
+            {t(k === 'audio' ? 'output.kindAudio' : 'output.kindVideo')}
           </button>
         ))}
       </span>
+      {mix.kind === 'audio' && (
+        <span class="segmented" role="group" aria-label={t('mix.format')}>
+          {(['wav', 'mp3'] as const).map((f) => (
+            <button key={f} type="button" class="segment" aria-pressed={mix.format === f} onClick={() => set({ format: f })}>
+              {f.toUpperCase()}
+            </button>
+          ))}
+        </span>
+      )}
       <select class="input mix-rate" aria-label={t('mix.rate')} title={t('mix.rate')} value={String(mix.sampleRate)} onChange={(e) => set({ sampleRate: Number(e.currentTarget.value) as MixSettings['sampleRate'] })}>
         <option value="48000">48 kHz</option>
         <option value="44100">44,1 kHz</option>
       </select>
+      {mix.kind === 'video' && <VideoOptions />}
     </div>
   );
 }
@@ -458,6 +490,36 @@ function MemoryAlert({ layout }: { layout: Layout }) {
       </button>
     </div>
   );
+}
+
+/** A video mix that will be slow here says so before it is generated. */
+function MixSlow() {
+  const app = useApp();
+  const { project, files, engine } = app;
+  const p = project.value;
+  const text = useSignal<string | null>(null);
+  const key = p.mix.kind === 'video' ? JSON.stringify([p.mix.video, p.mix.transition, p.clips.map((c) => [c.id, c.transitionIn])]) + files.infos.value.size : '';
+  useEffect(() => {
+    text.value = null;
+    if (!engine || p.mix.kind !== 'video') return;
+    let live = true;
+    assess(engine, app.store.get(), files).then(
+      (a) => {
+        if (!live) return;
+        if (a && a.backend === null) text.value = t('mix.noDecoder');
+        else if (a?.slow) text.value = t('mix.slow', { n: Math.round(a.ratio), engine: engineLabel(a.backend) });
+      },
+      () => {},
+    );
+    return () => {
+      live = false;
+    };
+  }, [key, engine]);
+  return text.value ? (
+    <p class="slow-notice" role="status" data-testid="mix-slow">
+      {text.value}
+    </p>
+  ) : null;
 }
 
 function MixActions({ compact }: { compact?: boolean }) {
@@ -510,6 +572,7 @@ export function MixPanel({ compact }: { compact?: boolean }) {
     <section class={`card mix${compact ? ' compact' : ''}`} aria-labelledby="mix-title" onKeyDown={keys}>
       <MixHead layout={layout} />
       {p.clips.length > 0 && <MixTransport pb={pb} total={layout.duration} zoom={compact ? undefined : zoom} compact={compact} />}
+      {p.clips.length > 0 && p.mix.kind === 'video' && <MixMonitor pb={pb} />}
       {p.clips.length === 0 ? (
         <EmptyMix />
       ) : compact ? (
@@ -518,6 +581,7 @@ export function MixPanel({ compact }: { compact?: boolean }) {
         <Strip layout={layout} onOpen={(i) => (open.value = i)} pb={pb} zoom={zoom} width={width} />
       )}
       <MemoryAlert layout={layout} />
+      <MixSlow />
       {compact ? (
         <>
           <button type="button" class="button wide" onClick={() => (options.value = true)}>

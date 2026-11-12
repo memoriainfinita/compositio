@@ -16,6 +16,8 @@ pnpm e2e          # Playwright in Firefox against dist/; run pnpm build first
 
 The first `pnpm e2e` may need the browser: `pnpm exec playwright install firefox`.
 
+Some unit tests run the commands and the HAP files against the ffmpeg installed on the machine (`mix.native.test.ts`, `hap.native.test.ts`); they are skipped when there is none. The e2e projects are `app` and `app-light` (the interface, against `dist/`), `engine` (the engines, against the dev server) and `webcodecs-chrome` (the WebCodecs engine in Chrome, which needs Chrome installed; run it by name: `pnpm exec playwright test --project=webcodecs-chrome`).
+
 CI runs lint, unit tests, build and e2e on every push and pull request. A push to `main` that passes deploys `dist/` to GitHub Pages.
 
 ## Service worker

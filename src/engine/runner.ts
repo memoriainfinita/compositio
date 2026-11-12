@@ -10,6 +10,8 @@ export interface RunRequest {
   tool?: 'ffmpeg' | 'ffprobe';
   /** Seconds of media the command goes through, for progress. */
   duration?: number;
+  /** Which ffmpeg.wasm core: the single-thread one by default; video encoders ask for the multithread one. */
+  core?: 'st' | 'mt';
 }
 
 export interface RunResult {

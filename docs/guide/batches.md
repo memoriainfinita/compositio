@@ -4,7 +4,7 @@ Trim, normalize and convert many files with the same settings, and name them as 
 
 ## The five steps
 
-«Output» has five steps, in order. They apply to every checked file.
+«Output» has five steps, in order, and a sixth, «Picture», for a video (see [Video](video.md)). They apply to every checked file.
 
 1. **Extract audio:** choose the audio track, and re-encode it or copy it without re-encoding. Copying applies no fades or normalizing, and the app says so
 2. **Trim:** use the in and out points set in the editor; optionally remove the silence at the ends, or cut without re-encoding (MP3 and AAC)
@@ -22,7 +22,7 @@ The app warns, in the step it concerns, about what will not do what you may expe
 
 ## Presets
 
-- A preset replaces the shared settings. Three come ready: WAV 48 kHz 24-bit, Theatre (WAV 48 kHz, -14 LUFS) and MP3 320
+- A preset replaces the shared settings. Six come ready: WAV 48 kHz 24-bit, Theatre (WAV 48 kHz, -14 LUFS), MP3 320, H.264 1080p 25 fps, ProRes HQ and HAP
 - Save the current shared settings with a name; presets can be renamed, deleted, exported and imported
 - On the start page, a preset button under «Process with» adds the files you choose with it, or drop on it, and processes them at once
 
@@ -31,6 +31,6 @@ The app warns, in the step it concerns, about what will not do what you may expe
 - «Process N checked» sends the files to the queue, which works one at a time; the order is the one of the list
 - Results wait in «Exports», which opens when a job ends, with them checked. «Download checked» downloads them, file by file or with «As one zip»
 - Each result also has its own «Download» and «Remove». Jobs under way can be cancelled and retried
-- Results are kept while the page stays open
+- Results are kept while the page stays open. Those made by WebCodecs or as HAP live on the browser's disk space, the others in memory
 
 On phones, several downloads always go as one zip: the browser keeps only the first of several downloads in a row.

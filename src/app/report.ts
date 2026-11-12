@@ -14,6 +14,8 @@ export interface ReportContext {
   layout: string;
   language: string;
   jobs: readonly JobView[];
+  /** The video engine chosen and what the browser says about WebCodecs. */
+  video?: { engine: string; webcodecs: string };
 }
 
 /** Plain text, one fact per line, then each failed job with the end of its log. */
@@ -24,6 +26,7 @@ export function reportText(c: ReportContext): string {
     `browser: ${c.userAgent}`,
     `isolated: ${c.isolated}, multithread: ${c.multithread}`,
     `layout: ${c.layout}, language: ${c.language}`,
+    ...(c.video ? [`video engine: ${c.video.engine}, webcodecs: ${c.video.webcodecs}`] : []),
     `failed jobs: ${failed.length}`,
     ...failed.flatMap((j) => [`- ${j.label}: ${j.error ?? 'unknown'}`, ...(j.detail ? j.detail.split('\n').map((l) => `    ${l}`) : [])]),
   ];

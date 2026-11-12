@@ -13,6 +13,7 @@ import { Dialog } from '../Dialog.tsx';
 import { announce } from '../layout.ts';
 import { save } from '../../app/output.ts';
 import { processSelection, quickAction } from './process.ts';
+import { SlowNotice } from './SlowNotice.tsx';
 
 const same = (a: unknown, b: unknown) => JSON.stringify(a) === JSON.stringify(b);
 
@@ -150,6 +151,7 @@ export function OutputFoot() {
           {t('presets.manage')}
         </button>
       </div>
+      <SlowNotice />
       <button type="button" class="button primary wide" disabled={n === 0} onClick={() => processSelection(app)}>
         {active ? t('output.processActive') : n === 1 ? t('output.processOne') : t('output.processN', { n })}
       </button>

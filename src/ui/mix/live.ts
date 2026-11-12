@@ -3,7 +3,9 @@
 // curves, the matching gain and the mix's own fades. The sample rate and MP3 are not imitated.
 
 import { fittedFades } from '../../model/edits.ts';
-import { mixLayout, sourceOf, type MixClip } from '../../model/mix.ts';
+import { curveGain } from '../../model/curve.ts';
+import { videoTracks } from '../../model/media.ts';
+import { canvasOf, mixLayout, sourceOf, type MixClip } from '../../model/mix.ts';
 import type { Curve, Fade } from '../../model/settings.ts';
 import { transitionOf, type MixSettings } from '../../model/timeline.ts';
 import { fadeGain } from '../editor/preview.ts';
@@ -24,6 +26,8 @@ export interface LiveClip {
   fadeOut: Fade;
   /** Linear gain of matching loudness; 1 when off or not measured. */
   gain: number;
+  /** The file has picture, which a video mix shows. */
+  picture: boolean;
 }
 
 export interface Live {
@@ -31,14 +35,22 @@ export interface Live {
   duration: number;
   fadeIn: Fade;
   fadeOut: Fade;
+  /** The mix is a video: its picture is shown too. */
+  video: boolean;
+  /** How a clip sits in the canvas, as CSS `object-fit`. */
+  fit: 'contain' | 'cover' | 'fill';
+  /** The canvas's shape, width over height. */
+  ratio: number;
 }
+
+const OBJECT_FIT = { letterbox: 'contain', fill: 'cover', stretch: 'fill' } as const;
 
 /** `gains` by clip id in dB, as the mix uses them; null when matching is off or not measured. */
 export function livePlan(clips: readonly MixClip[], mix: MixSettings, gains: ReadonlyMap<string, number> | null): Live {
   const lay = mixLayout(clips, mix);
   const out: LiveClip[] = [];
   clips.forEach((c, i) => {
-    const s = sourceOf(c);
+    const s = sourceOf(c, mix.kind === 'video');
     const placed = lay.placed[i];
     if ('error' in s || !placed) return;
     const next = clips[i + 1];
@@ -55,11 +67,15 @@ export function livePlan(clips: readonly MixClip[], mix: MixSettings, gains: Rea
       curveOut: next ? transitionOf(next.clip, mix).curve : 'tri',
       ...fittedFades(c.edits, s.length),
       gain: 10 ** (db / 20),
+      picture: videoTracks(c.info).length > 0,
     });
   });
   const duration = Math.max(0, ...out.map((c) => c.at + c.length));
   const fit = (f: Fade): Fade => ({ ...f, duration: Math.min(f.duration, duration) });
-  return { clips: out, duration, fadeIn: fit(mix.fadeIn), fadeOut: fit(mix.fadeOut) };
+  const video = mix.kind === 'video';
+  const canvas = video ? canvasOf(clips, mix) : null;
+  const ratio = canvas && !('error' in canvas) ? canvas.size.width / canvas.size.height : 16 / 9;
+  return { clips: out, duration, fadeIn: fit(mix.fadeIn), fadeOut: fit(mix.fadeOut), video, fit: OBJECT_FIT[mix.video.fit], ratio };
 }
 
 /** A clip's own gain `x` seconds into it: its fades, then the crossfades, as acrossfade does. */
@@ -126,4 +142,16 @@ export function soundingAt(live: Live, t: number): Sounding[] {
 export function clipAt(live: Live, t: number): number {
   const s = soundingAt(live, t);
   return s.length ? s[s.length - 1]!.index : -1;
+}
+
+/** The picture at time t: the clips on screen, the outgoing one first, each with the opacity its crossfade gives it. */
+export function pictureAt(live: Live, t: number): { index: number; alpha: number }[] {
+  const out: { index: number; alpha: number }[] = [];
+  if (t < 0 || t >= live.duration) return out;
+  live.clips.forEach((c, index) => {
+    const x = t - c.at;
+    if (x < 0 || x >= c.length || !c.picture) return;
+    out.push({ index, alpha: c.overlapIn > 0 && x < c.overlapIn ? curveGain(c.curveIn, x / c.overlapIn) : 1 });
+  });
+  return out;
 }

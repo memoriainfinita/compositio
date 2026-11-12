@@ -2,9 +2,11 @@
 // its source), and «Informar de un error», which copies the technical details for an issue.
 
 import { signal } from '@preact/signals';
-import { useState } from 'preact/hooks';
+import { useEffect, useState } from 'preact/hooks';
 import { ISSUES_URL, REPO_URL, reportText } from '../app/report.ts';
+import { videoEngine } from '../app/settings.ts';
 import { useApp } from '../app/state.ts';
+import { browserVideoSupport, VIDEO_ENGINES, type VideoEngine } from '../engine/index.ts';
 import { lang, t } from '../i18n/index.ts';
 import { Dialog } from './Dialog.tsx';
 import { layout } from './layout.ts';
@@ -15,6 +17,7 @@ export const aboutOpen = signal(false);
 
 const LIBRARIES: readonly [name: string, licence: string, url: string][] = [
   ['ffmpeg.wasm (@ffmpeg/core, @ffmpeg/ffmpeg)', 'GPL-2.0-or-later, MIT', 'https://github.com/ffmpegwasm/ffmpeg.wasm'],
+  ['Mediabunny', 'MPL-2.0', 'https://github.com/Vanilagy/mediabunny'],
   ['Preact, @preact/signals', 'MIT', 'https://github.com/preactjs/preact'],
   ['Valibot', 'MIT', 'https://github.com/fabian-hiller/valibot'],
   ['client-zip', 'MIT', 'https://github.com/Touffy/client-zip'],
@@ -23,7 +26,37 @@ const LIBRARIES: readonly [name: string, licence: string, url: string][] = [
   ['JetBrains Mono', 'OFL-1.1', 'https://github.com/JetBrains/JetBrainsMono'],
 ];
 
-function Report() {
+type Support = { encode: boolean; decode: boolean } | null;
+
+const supportText = (s: Support): string =>
+  !s ? t('about.webcodecsChecking') : s.encode && s.decode ? t('about.webcodecsYes') : s.encode ? t('about.webcodecsEncodeOnly') : s.decode ? t('about.webcodecsDecodeOnly') : t('about.webcodecsNo');
+
+/** Who makes the video, and what this browser says it can do; mostly for finding out why a video is slow or fails. */
+function VideoEngineSection({ support }: { support: Support }) {
+  const label: Record<VideoEngine, string> = { auto: t('about.videoEngine.auto'), ffmpeg: t('about.videoEngine.ffmpeg'), webcodecs: t('about.videoEngine.webcodecs') };
+  return (
+    <section class="about-section" aria-labelledby="video-engine-title">
+      <h3 id="video-engine-title" class="step-title">
+        {t('about.videoEngine')}
+      </h3>
+      <label class="crop-field" for="video-engine">
+        {t('about.videoEngineLabel')}
+      </label>
+      <select id="video-engine" class="input" title={t('about.videoEngineHint')} value={videoEngine.value} onChange={(e) => (videoEngine.value = e.currentTarget.value as VideoEngine)}>
+        {VIDEO_ENGINES.map((v) => (
+          <option key={v} value={v}>
+            {label[v]}
+          </option>
+        ))}
+      </select>
+      <p class="muted small" data-testid="webcodecs-support">
+        {t('about.webcodecs', { state: supportText(support) })}
+      </p>
+    </section>
+  );
+}
+
+function Report({ support }: { support: Support }) {
   const { engine } = useApp();
   const [state, setState] = useState<'idle' | 'copied' | 'failed'>('idle');
   const text = reportText({
@@ -34,6 +67,7 @@ function Report() {
     layout: layout.value,
     language: lang.value,
     jobs: engine?.queue.jobs() ?? [],
+    video: { engine: videoEngine.value, webcodecs: support ? `encode ${support.encode}, decode ${support.decode}` : 'unknown' },
   });
   const copy = () =>
     navigator.clipboard.writeText(text).then(
@@ -62,7 +96,12 @@ function Report() {
 }
 
 export function AboutDialog() {
-  if (!aboutOpen.value) return null;
+  const [support, setSupport] = useState<Support>(null);
+  const open = aboutOpen.value;
+  useEffect(() => {
+    if (open) void browserVideoSupport().then(setSupport);
+  }, [open]);
+  if (!open) return null;
   return (
     <Dialog open onClose={() => (aboutOpen.value = false)} title={t('about.title')}>
       <div class="about">
@@ -102,7 +141,8 @@ export function AboutDialog() {
             ))}
           </ul>
         </section>
-        <Report />
+        <VideoEngineSection support={support} />
+        <Report support={support} />
       </div>
     </Dialog>
   );

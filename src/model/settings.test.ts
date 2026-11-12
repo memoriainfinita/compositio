@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { defaultSettings, effectiveSettings, hasOverrides, pruneOverrides } from './settings.ts';
+import { defaultSettings, effectiveSettings, hasOverrides, pruneOverrides, stepsFor } from './settings.ts';
 import { clockTime, ffTime } from './media.ts';
 
 describe('settings', () => {
@@ -38,5 +38,12 @@ describe('time formats', () => {
   it('writes clock times for people', () => {
     expect(clockTime(65.4321)).toBe('1:05.432');
     expect(clockTime(3725)).toBe('1:02:05.000');
+  });
+});
+
+describe('stepsFor', () => {
+  it('leaves the picture out for a file without one', () => {
+    expect(stepsFor(false)).toEqual(['extract', 'trim', 'normalize', 'convert', 'output']);
+    expect(stepsFor(true)).toEqual(['extract', 'trim', 'picture', 'normalize', 'convert', 'output']);
   });
 });

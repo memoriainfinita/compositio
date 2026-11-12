@@ -54,7 +54,7 @@ describe('soundingAt', () => {
 
   it('uses the clip own transition curve', () => {
     const b = mc('b');
-    b.clip = clip('b', { duration: 4, curve: 'qsin', cut: false });
+    b.clip = clip('b', { duration: 4, curve: 'qsin', cut: false, style: 'dissolve' as const });
     const live = livePlan([mc('a'), b], mix(), null);
     const [out, into] = soundingAt(live, 58);
     expect(out!.gain).toBeCloseTo(Math.sin(Math.PI / 4), 6);
@@ -63,7 +63,7 @@ describe('soundingAt', () => {
 
   it('plays a dry cut one clip after the other', () => {
     const b = mc('b');
-    b.clip = clip('b', { duration: 6, curve: 'tri', cut: true });
+    b.clip = clip('b', { duration: 6, curve: 'tri', cut: true, style: 'dissolve' as const });
     const live = livePlan([mc('a'), b], mix(), null);
     expect(live.duration).toBe(120);
     expect(soundingAt(live, 59.9)).toEqual([{ index: 0, fileTime: 59.9, gain: 1 }]);

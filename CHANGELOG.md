@@ -4,6 +4,21 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versions: [sem
 
 ## [Unreleased]
 
+### Added
+
+- Video files: a «Picture» step with rotation, crop (dragged on the picture in the editor), size with five modes, frame rate, speed and fades to black; «Result: Audio or Video» and the sound kept, removed, silenced or replaced; a frame grabbed as PNG or JPEG; the editor shows the picture
+- Video out as H.264 (MP4), ProRes (MOV) or HAP (MOV), Hap and Hap Q, with PCM sound in a MOV. HAP is made by compositio itself, with its own encoder in a pool of workers and its own MOV writer
+- WebCodecs engine (Mediabunny) beside ffmpeg.wasm: the faster one is chosen for H.264 when the browser can encode and decode it, with ffmpeg.wasm as the fallback and for ProRes; results written to the browser's disk space, outside memory; «About» shows what the browser can do and can force one engine
+- Notice before processing of the engine that will work and how long it will take
+- Video mix: «Mix result: Audio or Video», a common canvas, the fit of each clip, picture crossfades with the sound's time and curve, black for clips of only sound, thumbnails on the strip, a monitor, and H.264, ProRes or HAP out
+- Presets «H.264 1080p 25 fps», «ProRes HQ» and «HAP» to start with
+- Mediabunny (MPL-2.0) credited in «About» and in the README
+
+### Changed
+
+- Montages are saved as version 4; those of version 1 to 3 open as before
+- Sizes of the picture go down to an even number, or to a multiple of 4 for HAP
+
 ## [0.1.0] - 2026-10-28
 
 First version.

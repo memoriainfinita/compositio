@@ -108,3 +108,15 @@ describe('queue', () => {
     expect(q.jobs()).toEqual([]);
   });
 });
+
+describe('queue, results kept outside memory', () => {
+  it('releases a result when its job is removed', async () => {
+    const q = createQueue();
+    let released = 0;
+    const { id, result } = q.add('video', async () => ({ release: async () => void released++ }));
+    await result;
+    expect(released).toBe(0);
+    q.remove(id);
+    expect(released).toBe(1);
+  });
+});

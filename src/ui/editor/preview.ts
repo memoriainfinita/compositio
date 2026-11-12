@@ -2,27 +2,12 @@
 // will apply. Conversion (rate, bits, lossy codecs) is not imitated.
 
 import { fittedFades, keptRange, rangeLength, type FileEdits, type Range, type Silences } from '../../model/edits.ts';
+import { curveGain } from '../../model/curve.ts';
 import type { Measurement } from '../../model/operations.ts';
-import type { Curve, Fade, OutputSettings } from '../../model/settings.ts';
+import type { Fade, OutputSettings } from '../../model/settings.ts';
 
-/** afade's curves (libavfilter/af_afade.c) for a position from 0 to 1 into the fade. */
-export function fadeGain(curve: Curve, x: number): number {
-  const g = Math.min(Math.max(x, 0), 1);
-  switch (curve) {
-    case 'tri':
-      return g;
-    case 'qsin':
-      return Math.sin((g * Math.PI) / 2);
-    case 'hsin':
-      return (1 - Math.cos(g * Math.PI)) / 2;
-    case 'esin':
-      return 1 - Math.cos((Math.PI / 4) * ((2 * g - 1) ** 3 + 1));
-    case 'log':
-      return Math.min(Math.max(1 + 0.2 * Math.log10(g), 0), 1);
-    case 'exp':
-      return Math.exp(-11.512925464970227 * (1 - g));
-  }
-}
+/** afade's curves, shared with the mix's picture (model/curve.ts). */
+export const fadeGain = curveGain;
 
 export interface Preview {
   range: Range;

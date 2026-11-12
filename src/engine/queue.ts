@@ -165,6 +165,8 @@ export function createQueue(onBusyChange: (busy: boolean) => void = () => {}): Q
       if (!e) return;
       if (e.view.status === 'running' || e.view.status === 'queued') this.cancel(id);
       entries.splice(entries.indexOf(e), 1);
+      // A result may keep files outside memory; they go with the job.
+      void (e.view.result as { release?: () => Promise<void> } | undefined)?.release?.()?.catch?.(() => {});
       emit();
     },
     jobs: snapshot,

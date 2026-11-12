@@ -5,7 +5,7 @@
 
 *Compositio*, Latin for putting together.
 
-Prepare audio and video for live shows in the browser. Everything runs on your device with [ffmpeg.wasm](https://github.com/ffmpegwasm/ffmpeg.wasm); no file leaves it.
+Prepare audio and video for live shows in the browser. Everything runs on your device, with [ffmpeg.wasm](https://github.com/ffmpegwasm/ffmpeg.wasm) and the browser's own video codecs (WebCodecs, through [Mediabunny](https://github.com/Vanilagy/mediabunny)); no file leaves it.
 
 **Live:** https://memoriainfinita.github.io/compositio/
 
@@ -31,10 +31,12 @@ Prepare audio and video for live shows in the browser. Everything runs on your d
 
 ## Output
 
-- Five steps in a fixed order: extract audio, trim, normalize (two-pass loudnorm, LUFS or peak), convert (WAV, FLAC, MP3, AAC/M4A, Opus, OGG), name
+- Five steps in a fixed order: extract audio, trim, normalize (two-pass loudnorm, LUFS or peak), convert (WAV, FLAC, MP3, AAC/M4A, Opus, OGG), name; a sixth, picture, for a video
+- Video: rotate, crop by dragging on the picture, rescale, change the frame rate and the speed, fade to black, keep, replace or remove the sound, grab a frame; out as H.264 (MP4), ProRes or HAP (MOV)
+- Video by WebCodecs when the browser can, with ffmpeg.wasm as the fallback and for ProRes; HAP, Hap and Hap Q, is made by compositio itself. Says before processing which engine will work and how long it expects it to take
 - Shared settings or settings for one file, with a mark on files that have their own
 - The checked files are processed, or the one in the editor when none is checked
-- Presets, with import and export; on the start screen, presets as quick actions that process at once
+- Presets, with import and export, and six to start with (WAV, theatre, MP3, H.264, ProRes, HAP); on the start screen, presets as quick actions that process at once
 - «Exports»: progress, cancel and retry, and the results, which wait there to be downloaded one by one, checked, or as one zip
 
 ## Mix
@@ -45,6 +47,7 @@ Prepare audio and video for live shows in the browser. Everything runs on your d
 - Overlaps dragged on the strip or set to the tenth of a second; dry cuts
 - Listen to about 20 s around a transition before generating the whole mix
 - Fade in and out, loudness matching, WAV 24-bit or MP3 320, 44.1 or 48 kHz
+- A video mix: the clips' pictures on a common canvas, crossfaded with the sound's time and curve, a monitor and thumbnails on the strip, and H.264, ProRes or HAP out
 - Start times as CSV
 
 ## Montages
@@ -64,7 +67,8 @@ Prepare audio and video for live shows in the browser. Everything runs on your d
 
 ffmpeg.wasm is WebAssembly in the browser:
 - 2 GB per input file
-- 10 to 100 times slower than native ffmpeg
+- 10 to 100 times slower than native ffmpeg; at 1080p it does not keep up with real time, which is why WebCodecs makes the video wherever it exists (not in Firefox on Android)
+- What ffmpeg.wasm makes is held in memory until it is downloaded; what WebCodecs and HAP make is written to the browser's disk space as it goes
 - Results are downloads; originals are never overwritten
 
 ## Look
@@ -77,7 +81,7 @@ The tests run in Firefox. Limits by browser: [docs/guide/browsers.md](docs/guide
 
 ## Stack
 
-Preact, Vite and TypeScript; ffmpeg.wasm with ffmpeg 5.1.4; SortableJS; client-zip. pnpm.
+Preact, Vite and TypeScript; ffmpeg.wasm with ffmpeg 5.1.4; Mediabunny for WebCodecs; SortableJS; client-zip. pnpm.
 
 ## Scripts
 
@@ -97,7 +101,7 @@ See [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## License
 
-GPL-3.0-only. See [LICENSE](LICENSE). ffmpeg.wasm (`@ffmpeg/core`, `@ffmpeg/core-mt`) is GPL-2.0-or-later.
+GPL-3.0-only. See [LICENSE](LICENSE). ffmpeg.wasm (`@ffmpeg/core`, `@ffmpeg/core-mt`) is GPL-2.0-or-later. Mediabunny is MPL-2.0, which allows it inside a GPL-3.0 program; its code is at https://github.com/Vanilagy/mediabunny.
 
 ## Credits
 

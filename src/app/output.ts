@@ -2,7 +2,8 @@
 // «Exportaciones» to downloads, file by file or as one zip. Nothing downloads by itself.
 
 import { downloadZip } from 'client-zip';
-import type { Engine, JobView, Processed } from '../engine/index.ts';
+import type { Backend, Engine, JobView, Processed } from '../engine/index.ts';
+import type { FileJob } from '../engine/jobs.ts';
 import type { FileRef } from '../model/formats.ts';
 import type { MediaInfo } from '../model/media.ts';
 import { applyPattern, disambiguate } from '../model/naming.ts';
@@ -37,6 +38,15 @@ export function processable(project: Project, files: Files): { ids: string[]; ac
   return { ids: [editing], active: true };
 }
 
+/** The file whose sound replaces a video's, when its settings ask for it and the file is here. */
+export function replacementFor(files: Files, settings: OutputSettings): { file: File; info: MediaInfo } | undefined {
+  const e = settings.extract;
+  if (e.kind !== 'video' || e.audio !== 'replace' || !e.replaceWith) return undefined;
+  const file = files.sources.value.get(e.replaceWith.fileId);
+  const info = files.infos.value.get(e.replaceWith.fileId);
+  return file && info ? { file, info } : undefined;
+}
+
 /**
  * Plans every file to know its extension, then names them all at once so that names colliding in
  * the batch get told apart. `settingsFor` gives the batch with the file's own values, or a preset.
@@ -51,7 +61,8 @@ export function prepare(project: Project, files: Files, ids: readonly string[], 
     if (!file || !info) continue;
     const settings = settingsFor(ref);
     const silences = files.silences.value.get(ref.id) ?? null;
-    const p = plan({ info, edits: ref.edits, settings, silences, inputPath: 'in', outputPath: 'out' });
+    const rep = replacementFor(files, settings);
+    const p = plan({ info, edits: ref.edits, settings, silences, ...(rep ? { replacement: { path: 'in2', info: rep.info } } : {}), inputPath: 'in', outputPath: 'out' });
     if ('error' in p) refused.push({ id: ref.id, name: ref.name, error: p.error });
     else planned.push({ ref, file, info, settings, extension: p.extension });
   }
@@ -89,14 +100,40 @@ export async function zip(entries: readonly { name: string; blob: Blob }[]): Pro
 
 export type Saver = (name: string, blob: Blob) => void;
 
+/** What the engine is given for one prepared file: its edits, settings, silences and the replacement sound. */
+export function jobInput(files: Files, project: Project, item: Pick<Prepared, 'id' | 'info' | 'settings'>): FileJob {
+  const ref = project.files.find((f) => f.id === item.id)!;
+  const rep = replacementFor(files, item.settings);
+  return { info: item.info, edits: ref.edits, settings: item.settings, silences: files.silences.value.get(item.id) ?? null, ...(rep ? { replacement: rep } : {}) };
+}
+
+export interface Slowness {
+  id: string;
+  name: string;
+  /** The engine that would make the video; null when a forced one cannot. */
+  backend: Backend | null;
+  ratio: number;
+}
+
+/** The files among `items` that would take several times their length, with the engine each would use. */
+export async function slowFiles(engine: Pick<Engine, 'assess'>, files: Files, project: Project, items: readonly Prepared[]): Promise<Slowness[]> {
+  const found = await Promise.all(
+    items.map(async (item) => {
+      const a = await engine.assess(item.file, jobInput(files, project, item)).catch(() => null);
+      const ref = project.files.find((f) => f.id === item.id);
+      return a && a.slow && ref ? { id: item.id, name: ref.name, backend: a.backend, ratio: a.ratio } : null;
+    }),
+  );
+  return found.filter((x): x is Slowness => x !== null);
+}
+
 /**
  * Queues one job per file. The results stay with their jobs, for «Exportaciones»; the promise
  * gives, once every job has ended, the ids of the ones that worked.
  */
 export function run(engine: Pick<Engine, 'process'>, files: Files, project: Project, items: readonly Prepared[]): Promise<string[]> {
   const jobs = items.map((item) => {
-    const ref = project.files.find((f) => f.id === item.id)!;
-    const input = { info: item.info, edits: ref.edits, settings: item.settings, silences: files.silences.value.get(item.id) ?? null };
+    const input = jobInput(files, project, item);
     const { id, result } = engine.process(item.name, item.file, input);
     return result.then(
       () => id,

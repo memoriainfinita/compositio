@@ -105,27 +105,32 @@ export const PresetsSchema = v.object({ presets: v.array(PresetSchema) });
 export const AppSettingsSchema = v.object({
   language: v.optional(v.picklist(['auto', 'es', 'en']), 'auto'),
   defaultPresetId: v.optional(v.nullable(v.string()), null),
+  /** Which engine makes video: the app chooses, or ffmpeg.wasm or WebCodecs only (to diagnose). */
+  videoEngine: v.optional(v.picklist(['auto', 'ffmpeg', 'webcodecs']), 'auto'),
 });
 export type AppSettings = v.InferOutput<typeof AppSettingsSchema>;
 
+/** Phase 2 (video) adds settings that every field of this document may carry. They all have a default, so version 1 reads as it is; the number moves so that an older app refuses a newer file instead of dropping what it does not know. */
+const SAME_BODY = (body: Body): Body => body;
+
 export const MONTAGE: FormatDef<Montage> = {
   format: 'compositio.montage',
-  version: 1,
+  version: 4,
   schema: MontageSchema,
-  migrations: {},
+  migrations: { 1: SAME_BODY, 2: SAME_BODY, 3: SAME_BODY },
 };
 
 /** Exported and imported preset files; also how presets are stored. */
 export const PRESETS: FormatDef<v.InferOutput<typeof PresetsSchema>> = {
   format: 'compositio.presets',
-  version: 1,
+  version: 2,
   schema: PresetsSchema,
-  migrations: {},
+  migrations: { 1: SAME_BODY },
 };
 
 export const APP_SETTINGS: FormatDef<AppSettings> = {
   format: 'compositio.settings',
-  version: 1,
+  version: 2,
   schema: AppSettingsSchema,
-  migrations: {},
+  migrations: { 1: SAME_BODY },
 };

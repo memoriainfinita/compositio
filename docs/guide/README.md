@@ -6,7 +6,8 @@ How to use compositio for what you want to do with it. Each page is a short walk
 |---|---|
 | Open it and process my first file | [Getting started](getting-started.md) |
 | Trim, normalize and convert a batch of files | [Batches](batches.md) |
-| Make one continuous mix for a show | [Mixing](mixing.md) |
+| Reframe, rescale or convert a video, to H.264, ProRes or HAP | [Video](video.md) |
+| Make one continuous mix for a show, of sound or of video | [Mixing](mixing.md) |
 | Keep my work and move it to another device | [Montages](montages.md) |
 | Use it on a phone or install it as an app | [Phone and install](phone.md) |
 | Know what each browser can and cannot do | [Browsers](browsers.md) |

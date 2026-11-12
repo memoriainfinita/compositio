@@ -459,11 +459,122 @@ main:focus {
   margin-top: 12px;
 }
 
-.editor-video {
-  width: 100%;
-  max-height: 260px;
+/* The picture as the output will turn it; its box has the shape of the turned picture. */
+.picture-frame {
+  position: relative;
+  container-type: size;
+  width: min(100%, calc(260px * var(--ratio, 1.7778)));
+  aspect-ratio: var(--ratio, 1.7778);
+  margin: 0 auto;
+  overflow: hidden;
   border-radius: var(--radius);
   background: #000;
+}
+
+.editor-video {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  background: #000;
+  transform: translate(-50%, -50%) rotate(var(--turn, 0deg));
+}
+
+.picture-frame[data-turn='90'] {
+  --turn: 90deg;
+}
+
+.picture-frame[data-turn='180'] {
+  --turn: 180deg;
+}
+
+.picture-frame[data-turn='270'] {
+  --turn: 270deg;
+}
+
+/* A quarter turn swaps the video's own sides, so that it fills the turned box. */
+.picture-frame[data-turn='90'] .editor-video,
+.picture-frame[data-turn='270'] .editor-video {
+  width: 100cqh;
+  height: 100cqw;
+}
+
+.crop-overlay {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.crop-rect {
+  position: absolute;
+  box-sizing: border-box;
+  border: 1.5px solid #fff;
+  box-shadow: 0 0 0 100vmax rgb(0 0 0 / 0.55);
+  cursor: move;
+  pointer-events: auto;
+  touch-action: none;
+}
+
+.crop-handle {
+  position: absolute;
+  width: 16px;
+  height: 16px;
+  box-sizing: border-box;
+  border: 2px solid #fff;
+  border-radius: 3px;
+  background: var(--accent);
+  touch-action: none;
+}
+
+.crop-nw { left: -8px; top: -8px; cursor: nwse-resize; }
+.crop-n { left: calc(50% - 8px); top: -8px; cursor: ns-resize; }
+.crop-ne { right: -8px; top: -8px; cursor: nesw-resize; }
+.crop-e { right: -8px; top: calc(50% - 8px); cursor: ew-resize; }
+.crop-se { right: -8px; bottom: -8px; cursor: nwse-resize; }
+.crop-s { left: calc(50% - 8px); bottom: -8px; cursor: ns-resize; }
+.crop-sw { left: -8px; bottom: -8px; cursor: nesw-resize; }
+.crop-w { left: -8px; top: calc(50% - 8px); cursor: ew-resize; }
+
+.crop-fields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.crop-field {
+  display: grid;
+  gap: 4px;
+  color: var(--text-2);
+  font-size: 0.8125rem;
+}
+
+.picture-size,
+.picture-engine {
+  margin: 0;
+}
+
+.frame-grab {
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.frame-grab .button svg {
+  width: 16px;
+  height: 16px;
+  margin-right: 6px;
+}
+
+.frame-grab select {
+  width: auto;
+}
+
+.refused-list,
+.slow-notice {
+  margin: 0;
+  color: var(--text-2);
+  font-size: 0.8125rem;
 }
 
 .wave-wrap {
@@ -1704,4 +1815,48 @@ svg.mix-thumb {
   width: 100%;
   box-sizing: border-box;
   font-size: 12px;
+}
+.mix-monitor {
+  position: relative;
+  width: min(100%, calc(38vh * var(--ratio, 1.7778)));
+  aspect-ratio: var(--ratio, 1.7778);
+  margin: 0 auto;
+  overflow: hidden;
+  border-radius: 4px;
+  background: #000;
+}
+
+.mix-monitor-video {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.mix-frame {
+  display: block;
+  width: auto;
+  max-width: 100%;
+  height: 40px;
+  margin-bottom: 2px;
+  border-radius: 3px;
+  background: var(--line);
+  object-fit: cover;
+}
+
+.mix-black {
+  display: block;
+  height: 40px;
+  margin-bottom: 2px;
+  border-radius: 3px;
+  background: #000;
+  color: #fff;
+  font-size: 11px;
+  line-height: 40px;
+  text-align: center;
+}
+
+.mix-video-options {
+  flex-basis: 100%;
+  padding-top: 4px;
 }

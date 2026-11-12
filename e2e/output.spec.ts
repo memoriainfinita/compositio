@@ -183,7 +183,7 @@ test('presets: starters, save, rename, export, delete, import, apply', { tag: '@
   await choose(page, [{ name: 'tono.wav', buffer: wav(1) }]);
   await loaded(page, 1);
   const picker = output(page).getByRole('combobox', { name: 'Preset' });
-  await expect(picker.locator('option')).toHaveText(['Ajustes sin preset', 'WAV 48 kHz 24 bit', 'Teatro: WAV 48 kHz, -14 LUFS', 'MP3 320']);
+  await expect(picker.locator('option')).toHaveText(['Ajustes sin preset', 'WAV 48 kHz 24 bit', 'Teatro: WAV 48 kHz, -14 LUFS', 'MP3 320', 'H.264 1080p 25 fps (reproductor)', 'ProRes HQ (Resolume)', 'HAP']);
   await picker.selectOption({ label: 'MP3 320' });
   await expect(output(page).getByLabel('Formato')).toHaveValue('mp3');
 
@@ -192,31 +192,31 @@ test('presets: starters, save, rename, export, delete, import, apply', { tag: '@
   await dialog.getByRole('textbox', { name: 'Nombre del preset nuevo' }).fill('Mío');
   await dialog.getByRole('button', { name: 'Guardar los ajustes comunes' }).click();
   const names = dialog.getByRole('textbox', { name: 'Nombre del preset', exact: true });
-  await expect(names).toHaveCount(4);
-  await names.nth(3).fill('Radio');
-  await names.nth(3).press('Enter');
-  await expect(picker.locator('option').nth(4)).toHaveText('Radio');
+  await expect(names).toHaveCount(7);
+  await names.nth(6).fill('Radio');
+  await names.nth(6).press('Enter');
+  await expect(picker.locator('option').nth(7)).toHaveText('Radio');
 
   const download = page.waitForEvent('download');
   await dialog.getByRole('button', { name: 'Exportar' }).click();
   const d = await download;
   expect(d.suggestedFilename()).toBe('compositio-presets.json');
   const exported = await readFile(await d.path(), 'utf8');
-  expect(JSON.parse(exported)).toMatchObject({ format: 'compositio.presets', version: 1 });
+  expect(JSON.parse(exported)).toMatchObject({ format: 'compositio.presets', version: 2 });
 
   await dialog.getByRole('button', { name: 'Borrar' }).first().click();
-  await expect(names).toHaveCount(3);
+  await expect(names).toHaveCount(6);
   const chooser = page.waitForEvent('filechooser');
   await dialog.getByRole('button', { name: 'Importar' }).click();
   await (await chooser).setFiles({ name: 'p.json', mimeType: 'application/json', buffer: Buffer.from(exported) });
-  await expect(names).toHaveCount(7);
+  await expect(names).toHaveCount(13);
   await expectAccessible(page);
 
   // Presets live outside the project: a reload keeps them.
   await page.keyboard.press('Escape');
   await page.reload();
   await page.waitForFunction(() => document.documentElement.dataset.app === 'ready');
-  await expect(output(page).getByRole('combobox', { name: 'Preset' }).locator('option')).toHaveCount(8);
+  await expect(output(page).getByRole('combobox', { name: 'Preset' }).locator('option')).toHaveCount(14);
 });
 
 test('a quick action on «Inicio» processes the files chosen with it', async ({ page }) => {

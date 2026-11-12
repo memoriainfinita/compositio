@@ -2,7 +2,7 @@
 
 import { batchSettings, prepare, processable, run } from '../../app/output.ts';
 import { showExports, type AppState } from '../../app/state.ts';
-import { t } from '../../i18n/index.ts';
+import { t, type Key } from '../../i18n/index.ts';
 import type { Preset } from '../../model/formats.ts';
 import { effectiveSettings, type OutputSettings } from '../../model/settings.ts';
 import { announce } from '../layout.ts';
@@ -12,7 +12,8 @@ function start(app: AppState, ids: readonly string[], settingsFor: Parameters<ty
   const project = app.store.get();
   if (!engine || ids.length === 0) return;
   const { items, refused } = prepare(project, files, ids, settingsFor);
-  const said = [items.length && t('process.queued', { n: items.length }), refused.length && t('process.refused', { n: refused.length, names: refused.map((r) => r.name).join(', ') })];
+  const why = (r: (typeof refused)[number]) => `${r.name} (${t(`planError.${r.error}` as Key)})`;
+  const said = [items.length && t('process.queued', { n: items.length }), refused.length && t('process.refused', { n: refused.length, names: refused.map(why).join(', ') })];
   announce(said.filter(Boolean).join('. '));
   void run(engine, files, project, items).then((ids) => showExports(app, ids));
 }

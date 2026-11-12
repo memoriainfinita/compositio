@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { defaultEdits, type FileEdits } from './edits.ts';
-import { media, mp3, track } from './fixtures.ts';
+import { clip, media, mp3, track, videoTrack } from './fixtures.ts';
 import type { MediaInfo } from './media.ts';
-import { OPERATIONS, parseMeasurement, plan, type JobPlan, type PlanInput } from './operations.ts';
+import { frameArgs, OPERATIONS, parseMeasurement, plan, type JobPlan, type PlanInput } from './operations.ts';
 import { defaultSettings, effectiveSettings, type Overrides } from './settings.ts';
 
 const input = (info: MediaInfo, own: Overrides = {}, edits: Partial<FileEdits> = {}): PlanInput => ({
@@ -26,7 +26,7 @@ const render = (p: JobPlan, m?: Parameters<JobPlan['render']>[0]): string => {
 
 describe('OPERATIONS', () => {
   it('follows the fixed order of «Salida»', () => {
-    expect(OPERATIONS.map((o) => o.id)).toEqual(['extract', 'trim', 'normalize', 'convert', 'output']);
+    expect(OPERATIONS.map((o) => o.id)).toEqual(['extract', 'trim', 'picture', 'normalize', 'convert', 'output']);
   });
 });
 
@@ -160,5 +160,138 @@ describe('parseMeasurement', () => {
     expect(parseMeasurement('loudnorm', silent)).toMatchObject({ i: -Infinity });
     expect(parseMeasurement('volume', '[Parsed_volumedetect_0 @ 0x1] max_volume: -6.5 dB')).toEqual({ kind: 'volume', maxVolume: -6.5 });
     expect(parseMeasurement('volume', 'nothing here')).toBeNull();
+  });
+});
+
+describe('plan, video', () => {
+  const video = { extract: { kind: 'video' as const } };
+
+  it('refuses a file without picture', () => {
+    expect(plan(input(media(), video))).toEqual({ error: 'no-video-track' });
+  });
+
+  it('encodes H.264 with the sound kept and a constant rate', () => {
+    const p = ok(plan(input(clip(), video)));
+    expect(p.extension).toBe('mp4');
+    expect(p.outputDuration).toBe(120);
+    const cmd = render(p);
+    expect(cmd).toContain('-map 0:v:0 -map 0:a:0');
+    expect(cmd).toContain('-vf fps=25/1');
+    expect(cmd).toContain('-c:v libx264 -preset veryfast -crf 18 -profile:v high -pix_fmt yuv420p -fps_mode cfr');
+    expect(cmd).toContain('-movflags +faststart -f mp4');
+  });
+
+  it('gives the encoder its threads only when told to', () => {
+    expect(render(ok(plan({ ...input(clip(), video), encoderThreads: 2 })))).toContain('-threads 2');
+    expect(render(ok(plan(input(clip(), video))))).not.toContain('-threads');
+  });
+
+  it('chains the picture in order and keeps the sound in step with the speed', () => {
+    const own = { ...video, picture: { rotate: 90 as const, scale: { mode: 'fit' as const, width: 1280, height: 720 }, speed: 4 } };
+    const p = ok(plan(input(clip(), own, { fadeIn: { duration: 2, curve: 'tri' } })));
+    const cmd = render(p);
+    expect(cmd).toContain('-vf transpose=1,scale=w=1280:h=720:force_original_aspect_ratio=decrease,scale=trunc(iw/2)*2:trunc(ih/2)*2,setsar=1,fade=t=in:st=0:d=2.000000,setpts=PTS/4,fps=25/1');
+    expect(cmd).toContain('-af afade=t=in:st=0:d=2.000000:curve=tri,atempo=2,atempo=2');
+    expect(p.outputDuration).toBe(30);
+  });
+
+  it('puts the file\'s rotation into the size it fits', () => {
+    const p = ok(plan(input(clip({}, { rotation: 90 }), { ...video, picture: { scale: { mode: 'letterbox', width: 1920, height: 1080 } } })));
+    expect(render(p)).toContain('scale=w=1920:h=1080:force_original_aspect_ratio=decrease,pad=1920:1080:(ow-iw)/2:(oh-ih)/2:black,setsar=1');
+  });
+
+  it('makes odd sizes even and says so', () => {
+    const p = ok(plan(input(clip({}, { width: 1279, height: 719 }), video)));
+    expect(render(p)).toContain('scale=trunc(iw/2)*2:trunc(ih/2)*2');
+    expect(p.warnings).toContain('size-rounded');
+  });
+
+  it('refuses a crop outside the picture', () => {
+    expect(plan(input(clip(), { ...video, picture: { crop: { x: 1000, y: 0, width: 1000, height: 100 } } }))).toEqual({ error: 'crop-outside-frame' });
+  });
+
+  it('writes ProRes into a mov, with alpha only for 4444 sources that have it', () => {
+    const own = { ...video, convert: { videoFormat: 'prores' as const, proresProfile: '4444' as const } };
+    const p = ok(plan(input(clip({}, { pixelFormat: 'yuva444p' }), own)));
+    expect(p.extension).toBe('mov');
+    expect(render(p)).toContain('-c:v prores_ks -profile:v 4 -pix_fmt yuva444p10le -fps_mode cfr');
+    expect(render(ok(plan(input(clip(), own))))).toContain('-pix_fmt yuv444p10le');
+    expect(render(ok(plan(input(clip(), { ...video, convert: { videoFormat: 'prores' } }))))).toContain('-profile:v 3 -pix_fmt yuv422p10le');
+  });
+
+  it('plans HAP for the browser: a mov, sizes of 4, the sound as PCM in a WAV, and no ffmpeg render', () => {
+    const own = { ...video, convert: { videoFormat: 'hap' as const, hapVariant: 'hapq' as const, bitDepth: 24 as const } };
+    const p = ok(plan(input(clip({}, { width: 1279, height: 719 }), own)));
+    expect(p.extension).toBe('mov');
+    expect(p.video).toMatchObject({ codec: 'hap', hapVariant: 'hapq', portable: false, picture: { size: { width: 1276, height: 716 } } });
+    expect(p.warnings).toContain('size-rounded');
+    expect(p.render()).toEqual({ error: 'hap-needs-decoder' });
+    const sound = p.renderAudio() as string[];
+    expect(sound).toEqual(expect.arrayContaining(['-c:a', 'pcm_s24le', '-f', 'wav']));
+    expect(sound).not.toContain('-c:v');
+  });
+
+  it('warns when ProRes would not fit in memory', () => {
+    const own = { ...video, convert: { videoFormat: 'prores' as const, proresProfile: '4444' as const } };
+    expect(ok(plan(input(clip({ duration: 3600 }), own))).warnings).toContain('output-may-not-fit');
+    expect(ok(plan(input(clip({ duration: 10 }), own))).warnings).not.toContain('output-may-not-fit');
+  });
+
+  it('drops the sound, or puts silence of the right length in its place', () => {
+    expect(render(ok(plan(input(clip(), { extract: { kind: 'video', audio: 'none' } }))))).toMatch(/-map 0:v:0 -vf .* -c:v .* -an /);
+    const s = ok(plan(input(clip(), { extract: { kind: 'video', audio: 'silence' } })));
+    expect(render(s)).toContain('-f lavfi -i anullsrc=r=48000:cl=stereo -map 0:v:0 -map 1:a:0');
+    expect(render(s)).toContain('-t 120.000000');
+  });
+
+  it('warns when the file has no sound to keep and goes without', () => {
+    const p = ok(plan(input(media({ tracks: [videoTrackOnly()] }), video)));
+    expect(p.warnings).toContain('audio-absent');
+    expect(render(p)).toContain('-an');
+  });
+
+  it('replaces the sound with another file\'s, bounded to the picture', () => {
+    const own = { extract: { kind: 'video' as const, audio: 'replace' as const, replaceWith: { fileId: 'b', track: 0 } } };
+    const replacement = { path: '/in/other', info: media() };
+    expect(plan(input(clip(), own))).toEqual({ error: 'replace-missing' });
+    const p = ok(plan({ ...input(clip(), own), replacement }));
+    expect(render(p)).toContain('-i /in/song -i /in/other -map 0:v:0 -map 1:a:0');
+    expect(render(p)).toContain('-t 120.000000');
+  });
+
+  it('measures a replaced sound on the replacement alone', () => {
+    const own = { extract: { kind: 'video' as const, audio: 'replace' as const, replaceWith: { fileId: 'b', track: 0 } }, normalize: { enabled: true } };
+    const p = ok(plan({ ...input(clip(), own), replacement: { path: '/in/other', info: media() } }));
+    expect(p.measure?.args.join(' ')).toBe('-hide_banner -nostdin -y -i /in/other -map 0:a:0 -af loudnorm=I=-14:TP=-1.5:LRA=11:print_format=json -t 120.000000 -f null -');
+  });
+
+  it('copies the streams as they are, in the container that fits', () => {
+    const p = ok(plan(input(clip(), { extract: { kind: 'video', mode: 'copy' } }, { in: 5 })));
+    expect(p.extension).toBe('mp4');
+    expect(p.warnings).toContain('keyframe-cut');
+    expect(render(p)).toContain('-c:v copy -c:a copy');
+    expect(ok(plan(input(clip({}, { codec: 'ffv1' }), { extract: { kind: 'video', mode: 'copy' } }))).extension).toBe('mkv');
+  });
+
+  it('warns about HDR sources', () => {
+    expect(ok(plan(input(clip({}, { transfer: 'smpte2084' }), video))).warnings).toContain('hdr-not-mapped');
+  });
+});
+
+function videoTrackOnly() {
+  return videoTrack();
+}
+
+describe('frameArgs', () => {
+  const v = videoTrack();
+  it('takes the oriented picture as it is', () => {
+    expect(frameArgs({ video: v, inputPath: '/in/a', outputPath: '/out/f', time: 1.5, format: 'png' })).toEqual([
+      '-hide_banner', '-nostdin', '-y', '-ss', '1.500000', '-i', '/in/a', '-map', '0:v:0', '-frames:v', '1', '-f', 'image2', '-update', '1', '/out/f',
+    ]);
+  });
+  it('applies the picture settings without the rate', () => {
+    const picture = { ...defaultSettings().picture, scale: { mode: 'stretch' as const, width: 640, height: 360 } };
+    const a = frameArgs({ video: v, inputPath: '/in/a', outputPath: '/out/f', time: 0, format: 'jpeg', picture });
+    expect(Array.isArray(a) && a.join(' ')).toContain('-vf scale=w=640:h=360,setsar=1 -q:v 3');
   });
 });

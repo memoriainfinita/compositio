@@ -78,6 +78,7 @@ test('«Acerca de» links to the code and copies the details for an issue', { ta
   await expect(dialog).toContainText('GPL-3.0');
   await expect(dialog.getByRole('link', { name: 'Código de compositio' })).toHaveAttribute('href', 'https://github.com/memoriainfinita/compositio');
   await expect(dialog.getByRole('link', { name: 'Código de ffmpeg.wasm' })).toHaveAttribute('href', 'https://github.com/ffmpegwasm/ffmpeg.wasm');
+  await expect(dialog.getByRole('link', { name: 'Mediabunny' })).toHaveAttribute('href', 'https://github.com/Vanilagy/mediabunny');
   await expect(dialog.getByRole('link', { name: 'Abrir una incidencia' })).toHaveAttribute('href', /issues\/new$/);
   await expectAccessible(page);
   await dialog.getByRole('button', { name: 'Copiar detalles' }).click();

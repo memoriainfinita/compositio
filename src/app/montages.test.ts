@@ -22,7 +22,7 @@ describe('montage library', () => {
     const lib = createMontageLibrary([], persist, () => ++t);
     const id = lib.save(project(), ' Gira ');
     expect(lib.list.value.map((e) => e.montage?.name)).toEqual(['Gira']);
-    expect(records.get(id)?.doc).toMatchObject({ format: 'compositio.montage', version: 1, id, name: 'Gira' });
+    expect(records.get(id)?.doc).toMatchObject({ format: 'compositio.montage', version: 4, id, name: 'Gira' });
     const again = lib.save({ ...project(), id }, 'Gira 2');
     expect(again).toBe(id);
     const copy = lib.save({ ...project(), id }, 'Copia', true);

@@ -3,7 +3,7 @@
 
 import * as v from 'valibot';
 import { clockTime } from './media.ts';
-import { CurveSchema, FadeSchema } from './settings.ts';
+import { CurveSchema, FadeSchema, FRAME_RATES, H264_PRESETS, HAP_VARIANTS, PRORES_PROFILES, VIDEO_FORMATS } from './settings.ts';
 
 const seconds = v.pipe(v.number(), v.finite(), v.minValue(0));
 
@@ -12,6 +12,8 @@ export const TransitionSchema = v.object({
   curve: CurveSchema,
   /** Dry cut: the next clip starts where this one ends, ignoring the duration. */
   cut: v.boolean(),
+  /** How the picture changes between clips. Only the dissolve exists; this is where others go. Sound ignores it. */
+  style: v.optional(v.picklist(['dissolve']), 'dissolve'),
 });
 export type Transition = v.InferOutput<typeof TransitionSchema>;
 
@@ -24,8 +26,29 @@ export const ClipSchema = v.object({
 });
 export type Clip = v.InferOutput<typeof ClipSchema>;
 
+/** The picture of a video mix. The canvas is common to all clips; each clip's own rotation, crop and fades still apply. */
+export const MixVideoSchema = v.object({
+  format: v.optional(v.picklist(VIDEO_FORMATS), 'mp4'),
+  h264Crf: v.optional(v.pipe(v.number(), v.integer(), v.minValue(0), v.maxValue(51)), 18),
+  h264Preset: v.optional(v.picklist(H264_PRESETS), 'veryfast'),
+  proresProfile: v.optional(v.picklist(PRORES_PROFILES), 'hq'),
+  hapVariant: v.optional(v.picklist(HAP_VARIANTS), 'hap'),
+  /** `first` takes the size of the first clip with picture; `fixed` uses width and height. */
+  canvas: v.optional(v.picklist(['first', 'fixed']), 'first'),
+  width: v.optional(v.pipe(v.number(), v.integer(), v.minValue(2), v.maxValue(8192)), 1920),
+  height: v.optional(v.pipe(v.number(), v.integer(), v.minValue(2), v.maxValue(8192)), 1080),
+  /** How each clip is put in the canvas: whole with bands, filling it and cutting the excess, or stretched. */
+  fit: v.optional(v.picklist(['letterbox', 'fill', 'stretch']), 'letterbox'),
+  /** `source` takes the rate of the first clip with picture. */
+  fps: v.optional(v.union([v.literal('source'), v.picklist(FRAME_RATES)]), 'source'),
+});
+export type MixVideo = v.InferOutput<typeof MixVideoSchema>;
+
 export const MixSettingsSchema = v.object({
-  transition: v.optional(TransitionSchema, { duration: 6, curve: 'tri', cut: false }),
+  /** What comes out: a sound file, or a video file. Audio is the default so that nothing already saved changes. */
+  kind: v.optional(v.picklist(['audio', 'video']), 'audio'),
+  video: v.optional(MixVideoSchema, {}),
+  transition: v.optional(TransitionSchema, { duration: 6, curve: 'tri', cut: false, style: 'dissolve' }),
   fadeIn: v.optional(FadeSchema, { duration: 0, curve: 'tri' }),
   fadeOut: v.optional(FadeSchema, { duration: 0, curve: 'tri' }),
   matchLoudness: v.optional(v.boolean(), false),

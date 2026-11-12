@@ -20,7 +20,7 @@ test.beforeAll(async ({ browser }) => {
       load('/src/model/settings.ts'),
       load('/src/model/edits.ts'),
     ]);
-    const runner = new WasmRunner(coreUrls('ffmpeg/core-0.12.10/'));
+    const runner = new WasmRunner(coreUrls('ffmpeg/core-0.12.10/'), coreUrls('ffmpeg/core-mt-0.12.10/'));
     const make = async (name: string, args: string[], inputs: File[] = []) => {
       const r = await runner.run({ inputs, args: ['-hide_banner', '-y', ...args, `/out/${name}`], outputs: [name] });
       if (r.code !== 0) throw new Error(r.log.slice(-5).join('\n'));
@@ -181,4 +181,80 @@ test('cancels a running job, keeps the screen on meanwhile, and runs the next on
   expect(r.cancelled).toBe('cancelled');
   expect(r.nextBytes).toBeGreaterThan(10_000);
   expect(r.wakeAfter).toBe('idle');
+});
+
+test('processes video plans on the multithread core', async () => {
+  test.setTimeout(480_000);
+  const results = await page.evaluate(async () => {
+    type Info = { duration: number; tracks: { kind: string; codec: string; width?: number; height?: number; pixelFormat?: string; fps?: { num: number; den: number } }[] };
+    type T = {
+      make: (n: string, a: string[], i?: File[]) => Promise<File>;
+      engine: {
+        multithread: boolean;
+        probe(f: File): Promise<Info>;
+        process(l: string, f: File, i: unknown): { result: Promise<{ blob: Blob; extension: string; warnings: string[] }> };
+        frame(f: File, j: unknown): Promise<Blob>;
+      };
+      settings: { defaultSettings(): unknown; effectiveSettings(b: unknown, o: unknown): unknown };
+      edits: { defaultEdits(): Record<string, unknown> };
+    };
+    const { make, engine, settings, edits } = (globalThis as never as { t: T }).t;
+    const clip = await make('clip.mp4', [
+      '-f', 'lavfi', '-i', 'testsrc2=size=320x180:rate=25:duration=2',
+      '-f', 'lavfi', '-i', 'sine=frequency=440:duration=2',
+      '-c:v', 'libx264', '-pix_fmt', 'yuv420p', '-c:a', 'aac', '-shortest',
+    ]);
+    const voice = await make('voz.wav', ['-f', 'lavfi', '-i', 'sine=frequency=220:duration=5', '-c:a', 'pcm_s16le']);
+    const info = await engine.probe(clip);
+    const voiceInfo = await engine.probe(voice);
+
+    const cases: [string, object, object?][] = [
+      ['default', {}],
+      ['fit and fades', { picture: { scale: { mode: 'fit', width: 160, height: 160 } } }, { fadeIn: { duration: 0.3, curve: 'tri' } }],
+      ['speed 2', { picture: { speed: 2 } }],
+      ['prores hq', { convert: { videoFormat: 'prores', proresProfile: 'hq' } }],
+      ['no audio', { extract: { kind: 'video', audio: 'none' } }],
+      ['silence', { extract: { kind: 'video', audio: 'silence' } }],
+      ['copy', { extract: { kind: 'video', mode: 'copy' } }],
+    ];
+    const out: Record<string, unknown> = { multithread: engine.multithread };
+    for (const [name, own, e] of cases) {
+      const merged = { extract: { kind: 'video' }, ...own, ...((own as { extract?: object }).extract ? { extract: { kind: 'video', ...(own as { extract: object }).extract } } : {}) };
+      const input = { info, edits: { ...edits.defaultEdits(), ...(e ?? {}) }, settings: settings.effectiveSettings(settings.defaultSettings(), merged) };
+      const done = await engine.process(name, clip, input).result;
+      const probed = await engine.probe(new File([done.blob], `out.${done.extension}`));
+      out[name] = { extension: done.extension, info: probed };
+    }
+    // The replacement goes in as a second input.
+    const rep = { extract: { kind: 'video', audio: 'replace', replaceWith: { fileId: 'b', track: 0 } } };
+    const replaced = await engine.process('replace', clip, {
+      info,
+      edits: edits.defaultEdits(),
+      settings: settings.effectiveSettings(settings.defaultSettings(), rep),
+      replacement: { file: voice, info: voiceInfo },
+    }).result;
+    out.replace = { extension: replaced.extension, info: await engine.probe(new File([replaced.blob], 'r.mp4')) };
+    const frame = await engine.frame(clip, { video: info.tracks[0], time: 1, format: 'png' });
+    out.frame = { type: frame.type, size: frame.size };
+    return out;
+  });
+  type R = { extension: string; info: { duration: number; tracks: { kind: string; codec: string; width?: number; height?: number; pixelFormat?: string; fps?: { num: number; den: number } }[] } };
+  const r = results as unknown as Record<string, R> & { multithread: boolean; frame: { type: string; size: number } };
+  const video = (x: R) => x.info.tracks.find((t) => t.kind === 'video')!;
+  const audio = (x: R) => x.info.tracks.find((t) => t.kind === 'audio');
+  expect(r.multithread).toBe(true);
+  expect(r.default.extension).toBe('mp4');
+  expect(video(r.default)).toMatchObject({ codec: 'h264', width: 320, height: 180, fps: { num: 25, den: 1 } });
+  expect(audio(r.default)?.codec).toBe('aac');
+  expect(video(r['fit and fades'])).toMatchObject({ width: 160, height: 90 });
+  expect(r['speed 2'].info.duration).toBeCloseTo(1, 0);
+  expect(r['prores hq'].extension).toBe('mov');
+  expect(video(r['prores hq'])).toMatchObject({ codec: 'prores', pixelFormat: 'yuv422p10le' });
+  expect(audio(r['no audio'])).toBeUndefined();
+  expect(audio(r.silence)).toBeDefined();
+  expect(video(r.copy).codec).toBe('h264');
+  expect(audio(r.replace)).toBeDefined();
+  expect(r.replace.info.duration).toBeCloseTo(2, 0);
+  expect(r.frame.type).toBe('image/png');
+  expect(r.frame.size).toBeGreaterThan(1000);
 });

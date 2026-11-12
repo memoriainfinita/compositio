@@ -12,14 +12,14 @@ describe('storage', () => {
     const p = addFiles(emptyProject(), [{ id: 'a', name: 'a.wav', size: 1, duration: 2 }]);
     await first.saveSession(p);
     await first.savePresets([{ id: 'p', name: 'Teatro', settings: defaultSettings() }]);
-    await first.saveSettings({ language: 'es', defaultPresetId: 'p' });
+    await first.saveSettings({ language: 'es', defaultPresetId: 'p', videoEngine: 'auto' });
     first.close();
 
     const second = await openStorage(factory);
     expect(await second.loadSession()).toEqual({ ok: true, value: p });
     const presets = await second.loadPresets();
     expect(presets.ok && presets.value?.map((x) => x.name)).toEqual(['Teatro']);
-    expect(await second.loadSettings()).toEqual({ ok: true, value: { language: 'es', defaultPresetId: 'p' } });
+    expect(await second.loadSettings()).toEqual({ ok: true, value: { language: 'es', defaultPresetId: 'p', videoEngine: 'auto' } });
     await second.clearSession();
     expect(await second.loadSession()).toEqual({ ok: true, value: null });
     second.close();

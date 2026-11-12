@@ -98,7 +98,7 @@ test.describe('desktop workspace', () => {
     await expect(page.getByRole('heading', { name: 'Editor' })).toBeVisible();
     await expect(page.getByRole('heading', { name: 'Mezcla' })).toBeVisible();
     await expect(page.getByRole('complementary', { name: 'Salida' }).getByRole('heading', { level: 3 })).toHaveText([
-      '1 Extraer audio',
+      '1 Pistas',
       '2 Recortar',
       '3 Normalizar',
       '4 Convertir',
@@ -134,7 +134,7 @@ test.describe('tablet workspace', () => {
     await page.keyboard.press('Escape');
     await expect(drawer).toBeHidden();
 
-    const first = page.getByRole('tab', { name: '1 Extraer audio' });
+    const first = page.getByRole('tab', { name: '1 Pistas' });
     await first.click();
     await page.keyboard.press('ArrowRight');
     await expect(page.getByRole('tab', { name: '2 Recortar' })).toBeFocused();
@@ -143,7 +143,7 @@ test.describe('tablet workspace', () => {
     await expect(page.getByRole('tab', { name: '5 Nombre' })).toBeFocused();
     await page.keyboard.press('ArrowRight');
     await expect(first).toBeFocused();
-    await expect(page.getByRole('tabpanel', { name: '1 Extraer audio' })).toContainText('Pista de audio');
+    await expect(page.getByRole('tabpanel', { name: '1 Pistas' })).toContainText('Pista de audio');
     await expectAccessible(page);
   });
 });

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import * as v from 'valibot';
-import { MONTAGE, PRESETS, parseDoc, serializeDoc, type FormatDef } from './formats.ts';
+import { APP_SETTINGS, MONTAGE, PRESETS, parseDoc, serializeDoc, type FormatDef } from './formats.ts';
 import { addClips, addFiles, emptyProject, setEdits } from './project.ts';
 import { defaultSettings } from './settings.ts';
 
@@ -10,7 +10,7 @@ describe('montage format', () => {
     p = setEdits(p, 'f1', { in: 2 });
     p = addClips(p, ['f1']);
     const json = JSON.stringify(serializeDoc(MONTAGE, p));
-    expect(JSON.parse(json)).toMatchObject({ format: 'compositio.montage', version: 1 });
+    expect(JSON.parse(json)).toMatchObject({ format: 'compositio.montage', version: 4 });
     expect(parseDoc(MONTAGE, json)).toEqual({ ok: true, value: p, migratedFrom: null });
   });
 
@@ -22,7 +22,7 @@ describe('montage format', () => {
   it('refuses what it cannot read, saying why', () => {
     expect(parseDoc(MONTAGE, '{nope')).toEqual({ ok: false, error: { code: 'not-json' } });
     expect(parseDoc(MONTAGE, { format: 'compositio.presets', version: 1 })).toEqual({ ok: false, error: { code: 'wrong-format', found: 'compositio.presets' } });
-    expect(parseDoc(MONTAGE, { format: 'compositio.montage', version: 2, files: [] })).toEqual({ ok: false, error: { code: 'too-new', version: 2 } });
+    expect(parseDoc(MONTAGE, { format: 'compositio.montage', version: 5, files: [] })).toEqual({ ok: false, error: { code: 'too-new', version: 5 } });
     expect(parseDoc(MONTAGE, { format: 'compositio.montage', version: '1', files: [] })).toEqual({ ok: false, error: { code: 'bad-version', found: '1' } });
   });
 
@@ -60,5 +60,24 @@ describe('presets format', () => {
     const file = serializeDoc(PRESETS, { presets: [{ id: 'p', name: 'Teatro', settings: defaultSettings() }] });
     const r = parseDoc(PRESETS, JSON.stringify(file));
     expect(r.ok && r.value.presets[0]?.name).toBe('Teatro');
+  });
+});
+
+describe('version 2 of montages', () => {
+  it('reads a version 1 montage as it was, with the picture settings at their defaults', () => {
+    const r = parseDoc(MONTAGE, { format: 'compositio.montage', version: 1, files: [] });
+    expect(r).toMatchObject({ ok: true, migratedFrom: 1 });
+    if (r.ok) {
+      expect(r.value.batch.extract.kind).toBe('audio');
+      expect(r.value.batch.picture.scale.mode).toBe('source');
+      expect(r.value.batch.convert.videoFormat).toBe('mp4');
+    }
+  });
+});
+
+describe('version 2 of the app settings', () => {
+  it('reads version 1 with the video engine left to the app', () => {
+    const r = parseDoc(APP_SETTINGS, { format: 'compositio.settings', version: 1, language: 'es' });
+    expect(r).toMatchObject({ ok: true, migratedFrom: 1, value: { language: 'es', videoEngine: 'auto' } });
   });
 });

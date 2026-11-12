@@ -15,7 +15,7 @@ describe('layout', () => {
   it('honours a clip transition and a dry cut', () => {
     const mix = defaultMix();
     const r = layout(
-      [clip('a'), clip('b', { duration: 10, curve: 'qsin', cut: false }), clip('c', { duration: 10, curve: 'tri', cut: true })],
+      [clip('a'), clip('b', { duration: 10, curve: 'qsin', cut: false, style: 'dissolve' as const }), clip('c', { duration: 10, curve: 'tri', cut: true, style: 'dissolve' as const })],
       lengths([['a', 60], ['b', 60], ['c', 30]]),
       mix,
     );

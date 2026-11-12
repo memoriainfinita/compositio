@@ -126,7 +126,7 @@ test('exports a montage and imports it back', async ({ page }) => {
   const d = await download;
   expect(d.suggestedFilename()).toBe('Gira.compositio.json');
   const text = await readFile(await d.path(), 'utf8');
-  expect(JSON.parse(text)).toMatchObject({ format: 'compositio.montage', version: 1, id: null, name: 'Gira' });
+  expect(JSON.parse(text)).toMatchObject({ format: 'compositio.montage', version: 4, id: null, name: 'Gira' });
 
   await library(page).getByRole('button', { name: 'Borrar' }).click();
   await expect(library(page)).toContainText('Sin montajes guardados');

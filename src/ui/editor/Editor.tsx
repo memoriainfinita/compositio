@@ -9,11 +9,17 @@ import { useApp } from '../../app/state.ts';
 import { t, type Key } from '../../i18n/index.ts';
 import type { FileEdits } from '../../model/edits.ts';
 import type { FileRef } from '../../model/formats.ts';
-import { audioTracks, clockTime, isVideo, type MediaInfo } from '../../model/media.ts';
-import { setEdits } from '../../model/project.ts';
+import { frameName, framedSize } from '../../model/crop.ts';
+import { audioTracks, clockTime, isVideo, videoTracks, type MediaInfo } from '../../model/media.ts';
+import { setBatch, setEdits, setOwn } from '../../model/project.ts';
 import { CURVES, effectiveSettings, type Curve, type Fade } from '../../model/settings.ts';
+import type { Rect } from '../../model/video.ts';
+import { save } from '../../app/output.ts';
 import { techLine } from '../format.ts';
-import { FitIcon, PauseIcon, PlayIcon, ZoomInIcon, ZoomOutIcon } from '../icons.tsx';
+import { CameraIcon, FitIcon, PauseIcon, PlayIcon, ZoomInIcon, ZoomOutIcon } from '../icons.tsx';
+import { announce } from '../layout.ts';
+import { inspectorScope } from '../output/controls.tsx';
+import { PictureFrame } from './PictureFrame.tsx';
 import { Player, type Side } from './player.ts';
 import { preview } from './preview.ts';
 import { regionOut, setFadeIn, setFadeOut, setIn, setOut } from './region.ts';
@@ -52,7 +58,7 @@ export function EditorPanel({ compact = false }: { compact?: boolean }) {
             <span class="strong">{file.name}</span>
             <span class="muted small mono">{info ? techLine(file.name, info) : here ? '' : t('files.missing')}</span>
           </div>
-          {here && info && audioTracks(info).length > 0 ? (
+          {here && info && (audioTracks(info).length > 0 || isVideo(info)) ? (
             <Stage key={file.id} file={file} info={info} compact={compact} />
           ) : (
             <>
@@ -75,6 +81,8 @@ function Stage({ file, info, compact }: { file: FileRef; info: MediaInfo; compac
   const duration = info.duration;
   const settings = effectiveSettings(project.value.batch, file.edits.own);
   const track = editorTrack(info, settings);
+  // A video without sound has a picture and a timeline, but no waveform and nothing to compare.
+  const hasAudio = audioTracks(info).length > 0;
   const silences = files.silences.value.get(file.id) ?? null;
   const fadesOff = settings.extract.mode === 'copy';
 
@@ -128,7 +136,7 @@ function Stage({ file, info, compact }: { file: FileRef; info: MediaInfo; compac
   useEffect(() => player?.setPreview(p));
 
   useEffect(() => {
-    if (!engine || side.value !== 'b' || !armed.value || !settings.normalize.enabled || measured) return;
+    if (!engine || !hasAudio || side.value !== 'b' || !armed.value || !settings.normalize.enabled || measured) return;
     const timer = setTimeout(() => wantMeasurement(files, engine, file.id, file.edits, settings), MEASURE_DELAY);
     return () => clearTimeout(timer);
   }, [key, side.value, armed.value]);
@@ -138,7 +146,7 @@ function Stage({ file, info, compact }: { file: FileRef; info: MediaInfo; compac
 
   const [copying, setCopying] = useState(false);
   const unplayable = () => {
-    if (!engine || listening) return;
+    if (!engine || listening || !hasAudio) return;
     setCopying(true);
     const opus = document.createElement('audio').canPlayType('audio/ogg; codecs="opus"') !== '';
     wantListening(files, engine, file.id, track, opus ? 'opus' : 'aac');
@@ -164,10 +172,41 @@ function Stage({ file, info, compact }: { file: FileRef; info: MediaInfo; compac
   const bind = (el: HTMLMediaElement | null) => void (media.current = el);
   const mediaProps = { ref: bind, src, preload: 'metadata' as const, onError: unplayable };
 
+  // The picture as the chosen output will show it: turned, with the crop drawn over it. The crop is
+  // written where the inspector is writing: the file's own settings, or the batch's.
+  const videoTrack = video ? videoTracks(info)[0] : undefined;
+  const rotate = settings.picture.rotate;
+  const crop = settings.extract.kind === 'video' ? settings.picture.crop : null;
+  const setCrop = (rect: Rect, group: string) =>
+    store.run((pr) => (inspectorScope.peek() === 'file' || file.edits.own.picture?.crop !== undefined ? setOwn(pr, file.id, 'picture', { crop: rect }) : setBatch(pr, 'picture', { crop: rect })), group);
+
+  const [frameFormat, setFrameFormat] = useState<'png' | 'jpeg'>('png');
+  const [framed, setFramed] = useState(false);
+  const [grabbing, setGrabbing] = useState(false);
+  const grab = async () => {
+    if (!engine || !videoTrack || grabbing) return;
+    setGrabbing(true);
+    const at = time.peek();
+    try {
+      const blob = await engine.frame(source, { video: videoTrack, time: at, format: frameFormat, ...(framed ? { picture: settings.picture } : {}) });
+      save(frameName(file.name, at, frameFormat), blob);
+    } catch {
+      announce(t('editor.frameFailed'));
+    } finally {
+      setGrabbing(false);
+    }
+  };
+
   return (
     <div ref={section} class="editor-stage" onKeyDown={keys} data-side={side.value} data-gain="1">
       {/* A new element per source: Web Audio takes an element only once. */}
-      {video ? <video key={src} {...mediaProps} class="editor-video" playsInline /> : <audio key={src} {...mediaProps} hidden />}
+      {videoTrack ? (
+        <PictureFrame frame={framedSize(videoTrack, rotate)} rotate={rotate} crop={crop} onCrop={setCrop}>
+          <video key={src} {...mediaProps} class="editor-video" playsInline />
+        </PictureFrame>
+      ) : (
+        <audio key={src} {...mediaProps} hidden />
+      )}
       <Waveform
         fileId={file.id}
         duration={duration}
@@ -188,18 +227,36 @@ function Stage({ file, info, compact }: { file: FileRef; info: MediaInfo; compac
         <span class="mono small transport-time">
           {timeText} / {clockTime(duration)}
         </span>
-        <div class="segmented" role="group" aria-label={t('editor.compare')}>
-          {(['b', 'a'] as const).map((s) => (
-            <button key={s} type="button" class="segment" aria-pressed={side.value === s} title={t(s === 'a' ? 'editor.aHint' : 'editor.bHint')} onClick={() => {
-              side.value = s;
-              if (s === 'b') armed.value = true;
-              player?.setSide(s);
-            }}>
-              {t(s === 'a' ? 'editor.original' : 'editor.result')}
+        {hasAudio && (
+          <div class="segmented" role="group" aria-label={t('editor.compare')}>
+            {(['b', 'a'] as const).map((s) => (
+              <button key={s} type="button" class="segment" aria-pressed={side.value === s} title={t(s === 'a' ? 'editor.aHint' : 'editor.bHint')} onClick={() => {
+                side.value = s;
+                if (s === 'b') armed.value = true;
+                player?.setSide(s);
+              }}>
+                {t(s === 'a' ? 'editor.original' : 'editor.result')}
+              </button>
+            ))}
+          </div>
+        )}
+        {hasAudio && side.value === 'b' && p.unmeasured && !last.current && <span class="muted small">{t('editor.unmeasured')}</span>}
+        {videoTrack && engine && (
+          <span class="row frame-grab" role="group" aria-label={t('editor.frame')}>
+            <button type="button" class="button small-button" disabled={grabbing} onClick={() => void grab()}>
+              <CameraIcon />
+              {t('editor.grabFrame')}
             </button>
-          ))}
-        </div>
-        {side.value === 'b' && p.unmeasured && !last.current && <span class="muted small">{t('editor.unmeasured')}</span>}
+            <select class="input" aria-label={t('editor.frameFormat')} title={t('editor.frameFormat')} value={frameFormat} onChange={(e) => setFrameFormat(e.currentTarget.value as 'png' | 'jpeg')}>
+              <option value="png">PNG</option>
+              <option value="jpeg">JPEG</option>
+            </select>
+            <label class="row small">
+              <input type="checkbox" class="check" checked={framed} onChange={(e) => setFramed(e.currentTarget.checked)} />
+              {t('editor.framePicture')}
+            </label>
+          </span>
+        )}
         {copying && !listening && (
           <span class="muted small" role="status">
             {t('editor.listening')}

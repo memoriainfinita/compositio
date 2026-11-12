@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { defaultEdits } from '../model/edits.ts';
-import { media } from '../model/fixtures.ts';
+import { clip, media, videoTrack } from '../model/fixtures.ts';
 import { defaultSettings, effectiveSettings } from '../model/settings.ts';
-import { detectSilences, probeFile, processFile } from './jobs.ts';
+import { detectSilences, extractFrame, probeFile, processFile } from './jobs.ts';
 import type { RunOptions, RunRequest, RunResult, Runner } from './runner.ts';
 import wav from './fixtures/probe-tone-wav.json';
 
@@ -83,5 +83,45 @@ describe('jobs', () => {
       detail: 'no-audio-track',
     });
     expect(runner.requests).toEqual([]);
+  });
+});
+
+describe('jobs, video', () => {
+  const clipFile = new File(['v'], 'clip.mp4');
+  const other = new File(['a'], 'voz.wav');
+  const base = (over: Parameters<typeof effectiveSettings>[1] = {}) => ({
+    info: clip(),
+    edits: defaultEdits(),
+    settings: effectiveSettings(defaultSettings(), { extract: { kind: 'video' }, ...over }),
+  });
+  const out = () => ({ files: new Map([['result', new Blob(['o'])]]) });
+
+  it('asks for the multithread core and counts progress in output seconds', async () => {
+    const runner = fakeRunner(out);
+    const own = { picture: { speed: 2 as const } };
+    await processFile(runner, clipFile, { ...base(own), encoderThreads: 2 });
+    expect(runner.requests[0]).toMatchObject({ core: 'mt', duration: 60 });
+    expect(runner.requests[0]?.args).toContain('-threads');
+  });
+
+  it('keeps the single-thread core when no threads were given', async () => {
+    const runner = fakeRunner(out);
+    await processFile(runner, clipFile, base());
+    expect(runner.requests[0]?.core).toBe('st');
+  });
+
+  it('mounts the replacement sound as the second input', async () => {
+    const runner = fakeRunner(out);
+    const own = { extract: { kind: 'video' as const, audio: 'replace' as const, replaceWith: { fileId: 'b', track: 0 } } };
+    await processFile(runner, clipFile, { ...base(own), replacement: { file: other, info: media() } });
+    expect(runner.requests[0]?.inputs).toEqual([clipFile, other]);
+    expect(runner.requests[0]?.args).toContain('/in/1/voz.wav');
+  });
+
+  it('takes a frame as an image', async () => {
+    const runner = fakeRunner(() => ({ files: new Map([['frame.png', new Blob(['p'])]]) }));
+    const blob = await extractFrame(runner, clipFile, { video: videoTrack(), time: 2, format: 'png' });
+    expect(blob.type).toBe('image/png');
+    expect(runner.requests[0]?.args).toContain('/out/frame.png');
   });
 });

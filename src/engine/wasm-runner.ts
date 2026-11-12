@@ -33,18 +33,28 @@ export const withLogLevel = (args: readonly string[]): string[] =>
 
 export class WasmRunner implements Runner {
   #ff: FFmpeg | null = null;
+  #core: 'st' | 'mt' = 'st';
   #loading: Promise<FFmpeg> | null = null;
   #onLine: (line: string) => void = ignore;
   #busy = false;
 
-  constructor(private readonly urls: CoreUrls) {}
+  /** `mt` is the multithread core; without it, requests for that core are refused. */
+  constructor(
+    private readonly urls: CoreUrls,
+    private readonly mtUrls?: CoreUrls,
+  ) {}
 
-  #instance(): Promise<FFmpeg> {
+  #instance(core: 'st' | 'mt' = 'st'): Promise<FFmpeg> {
+    // Only one core lives at a time: asking for the other drops this one.
+    if (this.#core !== core) this.#discard();
+    this.#core = core;
     this.#loading ??= (async () => {
       const ff = new FFmpeg();
       ff.on('log', ({ message }) => this.#onLine(message));
       try {
-        const { wasmBytes: _bytes, ...urls } = this.urls;
+        const chosen = core === 'mt' ? this.mtUrls : this.urls;
+        if (!chosen) throw new Error('multithread core unavailable');
+        const { wasmBytes: _bytes, ...urls } = chosen;
         await ff.load(urls);
       } catch (e) {
         ff.terminate();
@@ -77,7 +87,7 @@ export class WasmRunner implements Runner {
       this.#discard();
     };
     try {
-      const ff = await this.#instance();
+      const ff = await this.#instance(req.core ?? 'st');
       if (signal?.aborted) throw new EngineError('cancelled');
       signal?.addEventListener('abort', onAbort, { once: true });
       this.#onLine = (line) => {

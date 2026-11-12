@@ -6,8 +6,11 @@
 
 - A bottom bar switches between Files, Editor, Mix and Exports; the output settings open as a sheet
 - The system picker is the way to add files; dropping is not available
-- The mix has a list of clips in place of dragging, with its options behind «Mix options», and a position slider in place of the ruler
+- The mix has a list of clips in place of dragging, with its options behind «Mix options», and a position slider in place of the ruler. In a video mix the monitor sits above the list
+- A video's crop is dragged on the picture with a finger. This was not checked on a real phone
 - Several downloads always go as one zip
+
+![A video mix on a phone: the monitor above the list of clips](img/phone-video.png)
 
 ## Install it
 
